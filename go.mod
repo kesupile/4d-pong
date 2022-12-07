@@ -1,3 +1,3 @@
-module github.com/kesupile/4d-pong
+module server
 
 go 1.19
