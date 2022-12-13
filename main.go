@@ -11,6 +11,9 @@ func main() {
 
 	log.Println(gameDB)
 
+	go internal.Connect()
+
 	http.Handle("/", http.FileServer(http.Dir("./public")))
+	http.Handle("/api/session-start", internal.HandleSessionStart)
 	http.ListenAndServe(":3000", nil)
 }
