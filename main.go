@@ -1,19 +1,30 @@
 package main
 
 import (
-	"log"
 	"net/http"
+
 	"server/internal"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 func main() {
-	gameDB := internal.CreateDB()
 
-	log.Println(gameDB)
+	r := chi.NewRouter()
+	r.Use(middleware.Logger)
 
 	go internal.Connect()
 
-	http.Handle("/", http.FileServer(http.Dir("./public")))
-	http.Handle("/api/session-start", internal.HandleSessionStart)
-	http.ListenAndServe(":3000", nil)
+	// HTML
+	r.Handle("/", internal.HandleStatic("index.html"))
+	r.Handle("/game/{gameId:[\\w|-]+}", internal.HandleValidatedStatic("game.html", internal.ValidateGameId))
+
+	// JS
+	r.Handle("/index.js", internal.HandleStatic("index.js"))
+	r.Handle("/game.js", internal.HandleStatic("game.js"))
+
+	r.Post("/api/session-start", http.HandlerFunc(internal.HandleSessionStart))
+	r.Post("/api/new-game", http.HandlerFunc(internal.HandleNewGame))
+	http.ListenAndServe(":3000", r)
 }

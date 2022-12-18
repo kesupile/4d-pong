@@ -5,9 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/pion/webrtc/v3"
 )
 
@@ -19,6 +22,17 @@ func ReadIntoStruct(r io.Reader, v any) error {
 	}
 
 	return json.Unmarshal(bodyBytes, v)
+}
+
+func writeJsonResponse(w http.ResponseWriter, value any) {
+	response, err := json.Marshal(value)
+
+	if err != nil {
+		panic(err)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(response)
 }
 
 type SessionStartReq struct {
@@ -116,13 +130,9 @@ func startNewPeerConnection(sessionDescription string, ready chan<- string) {
 	select {}
 }
 
-type HandlerStruct struct{}
-
-var HandleSessionStart = HandlerStruct{}
-
-func (handler HandlerStruct) ServeHTTP(responseWriter http.ResponseWriter, request *http.Request) {
+func HandleSessionStart(w http.ResponseWriter, req *http.Request) {
 	var sessionData SessionStartReq
-	err := ReadIntoStruct(request.Body, &sessionData)
+	err := ReadIntoStruct(req.Body, &sessionData)
 
 	if err != nil {
 		panic(err)
@@ -133,15 +143,46 @@ func (handler HandlerStruct) ServeHTTP(responseWriter http.ResponseWriter, reque
 
 	localDescription := <-ready
 	fmt.Println("localDescription", localDescription)
+	writeJsonResponse(w, SessionStartReq{localDescription})
 
-	responseWriter.Header().Set("Content-Type", "application/json")
-	responseWriter.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusOK)
 
-	response, err := json.Marshal(SessionStartReq{localDescription})
+}
 
-	if err != nil {
-		panic(err)
+func HandleNewGame(w http.ResponseWriter, req *http.Request) {
+	game := CreateGame()
+
+	type NewGameResponse struct {
+		Id string `json:"gameId"`
 	}
 
-	responseWriter.Write(response)
+	writeJsonResponse(w, NewGameResponse{game.Id})
+	w.WriteHeader(http.StatusCreated)
+}
+
+func HandleStatic(path string) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		http.ServeFile(w, req, filepath.Join("public", path))
+	})
+}
+
+func HandleValidatedStatic(
+	path string,
+	validator func(w http.ResponseWriter, req *http.Request) bool,
+) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		if !validator(w, req) {
+			w.WriteHeader(http.StatusNotFound)
+		} else {
+			http.ServeFile(w, req, filepath.Join("public", path))
+
+		}
+	})
+}
+
+func ValidateGameId(w http.ResponseWriter, req *http.Request) bool {
+	gameId := chi.URLParam(req, "gameId")
+	log.Println("gameId...", gameId)
+	_, ok := GetGame(gameId)
+	return ok
 }

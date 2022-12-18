@@ -3,6 +3,7 @@ module server
 go 1.19
 
 require (
+	github.com/go-chi/chi/v5 v5.0.8 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/pion/datachannel v1.5.2 // indirect
 	github.com/pion/dtls/v2 v2.1.5 // indirect
