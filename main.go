@@ -26,5 +26,5 @@ func main() {
 
 	r.Post("/api/session-start", http.HandlerFunc(internal.HandleSessionStart))
 	r.Post("/api/new-game", http.HandlerFunc(internal.HandleNewGame))
-	http.ListenAndServe(":4001", r)
+	http.ListenAndServe(":4000", r)
 }
