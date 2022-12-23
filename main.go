@@ -22,9 +22,9 @@ func main() {
 
 	// JS
 	r.Handle("/index.js", internal.HandleStatic("index.js"))
-	r.Handle("/game.js", internal.HandleStatic("game.js"))
+	r.Handle("/game/game.js", internal.HandleStatic("game.js"))
 
 	r.Post("/api/session-start", http.HandlerFunc(internal.HandleSessionStart))
 	r.Post("/api/new-game", http.HandlerFunc(internal.HandleNewGame))
-	http.ListenAndServe(":3000", r)
+	http.ListenAndServe(":4001", r)
 }
