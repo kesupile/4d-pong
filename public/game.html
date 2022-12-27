@@ -1,8 +1,25 @@
 <!DOCTYPE html>
 <html>
-  <head> </head>
+  <head>
+    <style>
+      #game {
+        position: relative;
+      }
+
+      .player {
+        position: absolute;
+        z-index: 1;
+        background-color: white;
+      }
+
+      .player.currentPlayer {
+        background-color: yellow;
+      }
+    </style>
+  </head>
   <body>
     Game!
+    <div id="game"></div>
     <script type="text/javascript" src="./game.js"></script>
   </body>
 </html>

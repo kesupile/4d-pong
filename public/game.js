@@ -1,8 +1,3 @@
-let lastElement;
-let body;
-
-const dataChannelLabel = window.crypto.randomUUID();
-
 const log = (data) => {
   if (!body) {
     body = document.getElementsByTagName("body")[0];
@@ -21,8 +16,50 @@ const log = (data) => {
   console.log(data);
 };
 
-window.addEventListener("DOMContentLoaded", () => {
-  log(`ID: ${dataChannelLabel}`);
+const dataChannelLabel = window.crypto.randomUUID();
+let lastElement;
+let body;
+
+const getUrlInfo = (() => {
+  let gameId;
+  let origin;
+
+  return () => {
+    if (!gameId || !origin) {
+      const [, , gameIdPart] = window.location.pathname.split("/");
+      gameId = gameIdPart;
+
+      origin = window.location.origin;
+
+      log({ gameId, origin });
+    }
+
+    return { origin, gameId };
+  };
+})();
+
+const getGameStatus = () => {
+  const { origin, gameId } = getUrlInfo();
+  return fetch(`${origin}/api/game/${gameId}/status`).then((r) => r.json());
+};
+
+const initialiseGame = (message) => {
+  const gameContainer = document.getElementById("game");
+  gameContainer.style.width = `${message.width}px`;
+  gameContainer.style.height = `${message.width}px`;
+  gameContainer.style.backgroundColor = "black";
+
+  const thisPlayerElement = document.createElement("div");
+  thisPlayerElement.id = "top";
+  thisPlayerElement.classList.add("player", "currentPlayer");
+  thisPlayerElement.style.width = `${message.playerDimensions[0]}px`;
+  thisPlayerElement.style.height = `${message.playerDimensions[1]}px`;
+  thisPlayerElement.style.left = `${message.playerCoordinates[0]}px`;
+  thisPlayerElement.style.top = `${message.playerCoordinates[1]}px`;
+  gameContainer.appendChild(thisPlayerElement);
+};
+
+const startNewConnection = () => {
   const pc = new RTCPeerConnection({
     iceServers: [
       {
@@ -44,7 +81,9 @@ window.addEventListener("DOMContentLoaded", () => {
     if (event.candidate === null) {
       const sessionDescription = btoa(JSON.stringify(pc.localDescription));
 
-      fetch("/api/session-start", {
+      const { origin, gameId } = getUrlInfo();
+
+      fetch(`${origin}/api/game/${gameId}/join`, {
         method: "POST",
         body: JSON.stringify({ sessionDescription }),
         headers: {
@@ -61,4 +100,29 @@ window.addEventListener("DOMContentLoaded", () => {
         });
     }
   };
+
+  sendChannel.onmessage = (message) => {
+    if (typeof message.data === "string") {
+      const data = JSON.parse(message.data);
+      log(data);
+
+      switch (data.type) {
+        case "init":
+          initialiseGame(data);
+        default:
+          console.error("String message with unknown type");
+      }
+    }
+  };
+};
+
+window.addEventListener("DOMContentLoaded", () => {
+  log(`ID: ${dataChannelLabel}`);
+
+  getGameStatus().then((res) => {
+    if (res.acceptingConnections) {
+      return startNewConnection();
+    }
+    return console.error("Do something else here...");
+  });
 });

@@ -24,7 +24,16 @@ func main() {
 	r.Handle("/index.js", internal.HandleStatic("index.js"))
 	r.Handle("/game/game.js", internal.HandleStatic("game.js"))
 
-	r.Post("/api/session-start", http.HandlerFunc(internal.HandleSessionStart))
-	r.Post("/api/new-game", http.HandlerFunc(internal.HandleNewGame))
+	r.Get(
+		"/api/game/{gameId:[\\w|-]+}/status",
+		internal.HandleValidatedRestEndpoint(internal.ValidateGameId, internal.HandleGameStatusGET),
+	)
+
+	r.Post(
+		"/api/game/{gameId:[\\w|-]+}/join",
+		internal.HandleValidatedRestEndpoint(internal.ValidateGameId, internal.HandleGameJoinPOST),
+	)
+
+	r.Post("/api/new-game", http.HandlerFunc(internal.HandleNewGamePOST))
 	http.ListenAndServe(":4000", r)
 }

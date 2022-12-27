@@ -34,11 +34,7 @@ func writeJsonResponse(w http.ResponseWriter, value any) {
 	w.Write(response)
 }
 
-type SessionStartReq struct {
-	SessionDescription string `json:"sessionDescription"`
-}
-
-func startNewPeerConnection(sessionDescription string, ready chan<- string) {
+func startNewPeerConnection(sessionDescription string, gameId string, ready chan<- string) {
 	config := webrtc.Configuration{
 		ICEServers: []webrtc.ICEServer{
 			{
@@ -75,23 +71,8 @@ func startNewPeerConnection(sessionDescription string, ready chan<- string) {
 	})
 
 	// Register data channel creation handling
-	peerConnection.OnDataChannel(func(d *webrtc.DataChannel) {
-
-		label := d.Label()
-
-		// Register channel opening handling
-		d.OnOpen(func() {
-			fmt.Print("Data channel has been opened: ", label)
-		})
-
-		// Register text message handling
-		d.OnMessage(func(msg webrtc.DataChannelMessage) {
-			fmt.Printf("Message from DataChannel: '%s': '%s'\n", label, string(msg.Data))
-		})
-
-		d.OnClose(func() {
-			fmt.Printf("Closing data channel: %s", label)
-		})
+	peerConnection.OnDataChannel(func(dataChannel *webrtc.DataChannel) {
+		RegisterDataChanel(gameId, dataChannel)
 	})
 
 	sessionDescriptionBytes, sessionDecodingErr := base64.StdEncoding.DecodeString(sessionDescription)
@@ -142,14 +123,42 @@ func startNewPeerConnection(sessionDescription string, ready chan<- string) {
 
 	ready <- localDescription
 
-	select {
-	case <-closeGoRoutine:
-		log.Print("Closing goroutine")
-		return
-	}
+	<-closeGoRoutine
 }
 
-func HandleSessionStart(w http.ResponseWriter, req *http.Request) {
+func getGameFromRequest(req *http.Request) *Game {
+	gameId := chi.URLParam(req, "gameId")
+	game, _ := GetGame(gameId)
+	return game
+}
+
+func HandleGameStatusGET(w http.ResponseWriter, req *http.Request) {
+	game := getGameFromRequest(req)
+
+	type Response struct {
+		Active               bool `json:"active"`
+		AcceptingConnections bool `json:"acceptingConnections"`
+	}
+
+	writeJsonResponse(w, Response{
+		Active:               game.Active,
+		AcceptingConnections: game.IsAcceptingConnections(),
+	})
+	w.WriteHeader(http.StatusOK)
+}
+
+func HandleGameJoinPOST(w http.ResponseWriter, req *http.Request) {
+	game := getGameFromRequest(req)
+
+	if !game.IsAcceptingConnections() {
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
+
+	type SessionStartReq struct {
+		SessionDescription string `json:"sessionDescription"`
+	}
+
 	var sessionData SessionStartReq
 	err := ReadIntoStruct(req.Body, &sessionData)
 
@@ -158,7 +167,7 @@ func HandleSessionStart(w http.ResponseWriter, req *http.Request) {
 	}
 
 	ready := make(chan string)
-	go startNewPeerConnection(sessionData.SessionDescription, ready)
+	go startNewPeerConnection(sessionData.SessionDescription, game.Id, ready)
 
 	localDescription := <-ready
 	writeJsonResponse(w, SessionStartReq{localDescription})
@@ -167,7 +176,7 @@ func HandleSessionStart(w http.ResponseWriter, req *http.Request) {
 
 }
 
-func HandleNewGame(w http.ResponseWriter, req *http.Request) {
+func HandleNewGamePOST(w http.ResponseWriter, req *http.Request) {
 	game := CreateGame()
 
 	type NewGameResponse struct {
@@ -193,7 +202,20 @@ func HandleValidatedStatic(
 			w.WriteHeader(http.StatusNotFound)
 		} else {
 			http.ServeFile(w, req, filepath.Join("public", path))
+		}
+	})
+}
 
+func HandleValidatedRestEndpoint(
+	validator func(w http.ResponseWriter, req *http.Request) bool,
+	handler func(w http.ResponseWriter, req *http.Request),
+) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		ok := validator(w, req)
+		if !ok {
+			w.WriteHeader(http.StatusNotFound)
+		} else {
+			handler(w, req)
 		}
 	})
 }
