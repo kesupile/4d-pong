@@ -1,6 +1,8 @@
 let lastElement;
 let body;
 
+const dataChannelLabel = window.crypto.randomUUID();
+
 const log = (data) => {
   if (!body) {
     body = document.getElementsByTagName("body")[0];
@@ -20,7 +22,7 @@ const log = (data) => {
 };
 
 window.addEventListener("DOMContentLoaded", () => {
-  log("Starting...");
+  log(`ID: ${dataChannelLabel}`);
   const pc = new RTCPeerConnection({
     iceServers: [
       {
@@ -35,13 +37,12 @@ window.addEventListener("DOMContentLoaded", () => {
       .then((d) => pc.setLocalDescription(d))
       .catch(log);
 
-  const sendChannel = pc.createDataChannel("foo");
+  const sendChannel = pc.createDataChannel(dataChannelLabel);
 
   pc.oniceconnectionstatechange = (e) => log(pc.iceConnectionState);
   pc.onicecandidate = (event) => {
     if (event.candidate === null) {
       const sessionDescription = btoa(JSON.stringify(pc.localDescription));
-      log("base64 session description", sessionDescription);
 
       fetch("/api/session-start", {
         method: "POST",

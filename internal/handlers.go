@@ -7,7 +7,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"os"
 	"path/filepath"
 
 	"github.com/go-chi/chi/v5"
@@ -40,11 +39,6 @@ type SessionStartReq struct {
 }
 
 func startNewPeerConnection(sessionDescription string, ready chan<- string) {
-	s := webrtc.SettingEngine{}
-	s.DetachDataChannels()
-
-	api := webrtc.NewAPI((webrtc.WithSettingEngine(s)))
-
 	config := webrtc.Configuration{
 		ICEServers: []webrtc.ICEServer{
 			{
@@ -53,7 +47,9 @@ func startNewPeerConnection(sessionDescription string, ready chan<- string) {
 		},
 	}
 
-	peerConnection, err := api.NewPeerConnection(config)
+	closeGoRoutine := make(chan bool)
+
+	peerConnection, err := webrtc.NewPeerConnection(config)
 	if err != nil {
 		panic(err)
 	}
@@ -73,11 +69,29 @@ func startNewPeerConnection(sessionDescription string, ready chan<- string) {
 			// Use webrtc.PeerConnectionStateDisconnected if you are interested in detecting faster timeout.
 			// Note that the PeerConnection may come back from PeerConnectionStateDisconnected.
 			fmt.Println("Peer Connection has gone to failed exiting")
-			os.Exit(0)
+			closeGoRoutine <- true
 		}
 	})
 
-	// TODO: handle data channel data
+	// Register data channel creation handling
+	peerConnection.OnDataChannel(func(d *webrtc.DataChannel) {
+
+		label := d.Label()
+
+		// Register channel opening handling
+		d.OnOpen(func() {
+			fmt.Print("Data channel has been opened: ", label)
+		})
+
+		// Register text message handling
+		d.OnMessage(func(msg webrtc.DataChannelMessage) {
+			fmt.Printf("Message from DataChannel: '%s': '%s'\n", label, string(msg.Data))
+		})
+
+		d.OnClose(func() {
+			fmt.Printf("Closing data channel: %s", label)
+		})
+	})
 
 	sessionDescriptionBytes, sessionDecodingErr := base64.StdEncoding.DecodeString(sessionDescription)
 	if sessionDecodingErr != nil {
@@ -127,7 +141,11 @@ func startNewPeerConnection(sessionDescription string, ready chan<- string) {
 
 	ready <- localDescription
 
-	select {}
+	select {
+	case <-closeGoRoutine:
+		log.Print("Closing goroutine")
+		return
+	}
 }
 
 func HandleSessionStart(w http.ResponseWriter, req *http.Request) {
@@ -142,7 +160,6 @@ func HandleSessionStart(w http.ResponseWriter, req *http.Request) {
 	go startNewPeerConnection(sessionData.SessionDescription, ready)
 
 	localDescription := <-ready
-	fmt.Println("localDescription", localDescription)
 	writeJsonResponse(w, SessionStartReq{localDescription})
 
 	w.WriteHeader(http.StatusOK)
