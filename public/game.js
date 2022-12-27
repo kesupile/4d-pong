@@ -1,7 +1,26 @@
-window.addEventListener("DOMContentLoaded", () => {
-  const log = console.log;
-  log("hello");
+let lastElement;
+let body;
 
+const log = (data) => {
+  if (!body) {
+    body = document.getElementsByTagName("body")[0];
+  }
+
+  const nextElement = document.createElement("pre");
+  nextElement.textContent = JSON.stringify(data, null, 4);
+
+  if (lastElement) {
+    body.insertBefore(nextElement, lastElement);
+  } else {
+    body.appendChild(nextElement);
+  }
+
+  lastElement = nextElement;
+  console.log(data);
+};
+
+window.addEventListener("DOMContentLoaded", () => {
+  log("Starting...");
   const pc = new RTCPeerConnection({
     iceServers: [
       {
@@ -22,7 +41,7 @@ window.addEventListener("DOMContentLoaded", () => {
   pc.onicecandidate = (event) => {
     if (event.candidate === null) {
       const sessionDescription = btoa(JSON.stringify(pc.localDescription));
-      console.log("base64 session description", sessionDescription);
+      log("base64 session description", sessionDescription);
 
       fetch("/api/session-start", {
         method: "POST",
@@ -33,9 +52,9 @@ window.addEventListener("DOMContentLoaded", () => {
       })
         .then((res) => res.json())
         .then((v) => {
-          console.log(v);
+          log(v);
           const remoteDescription = JSON.parse(atob(v.sessionDescription));
-          console.log(remoteDescription);
+          log(remoteDescription);
 
           pc.setRemoteDescription(remoteDescription);
         });
