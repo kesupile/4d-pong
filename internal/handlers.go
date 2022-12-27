@@ -54,6 +54,7 @@ func startNewPeerConnection(sessionDescription string, ready chan<- string) {
 		panic(err)
 	}
 	defer func() {
+		log.Println("In defer function...Closing peerConnection...")
 		if cErr := peerConnection.Close(); cErr != nil {
 			fmt.Printf("Cannot close peerConnection %v\n", cErr)
 		}
