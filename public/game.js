@@ -43,20 +43,20 @@ const getGameStatus = () => {
   return fetch(`${origin}/api/game/${gameId}/status`).then((r) => r.json());
 };
 
-const initialiseGame = (message) => {
+const initialiseGame = (details) => {
   const gameContainer = document.getElementById("game");
-  gameContainer.style.width = `${message.width}px`;
-  gameContainer.style.height = `${message.width}px`;
+  gameContainer.style.width = `${details.width}px`;
+  gameContainer.style.height = `${details.height}px`;
   gameContainer.style.backgroundColor = "black";
 
-  const thisPlayerElement = document.createElement("div");
-  thisPlayerElement.id = "top";
-  thisPlayerElement.classList.add("player", "currentPlayer");
-  thisPlayerElement.style.width = `${message.playerDimensions[0]}px`;
-  thisPlayerElement.style.height = `${message.playerDimensions[1]}px`;
-  thisPlayerElement.style.left = `${message.playerCoordinates[0]}px`;
-  thisPlayerElement.style.top = `${message.playerCoordinates[1]}px`;
-  gameContainer.appendChild(thisPlayerElement);
+  // const thisPlayerElement = document.createElement("div");
+  // thisPlayerElement.id = "top";
+  // thisPlayerElement.classList.add("player", "currentPlayer");
+  // thisPlayerElement.style.width = `${message.playerDimensions[0]}px`;
+  // thisPlayerElement.style.height = `${message.playerDimensions[1]}px`;
+  // thisPlayerElement.style.left = `${message.playerCoordinates[0]}px`;
+  // thisPlayerElement.style.top = `${message.playerCoordinates[1]}px`;
+  // gameContainer.appendChild(thisPlayerElement);
 };
 
 const startNewConnection = () => {
@@ -121,6 +121,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
   getGameStatus().then((res) => {
     if (res.acceptingConnections) {
+      initialiseGame(res);
       return startNewConnection();
     }
     return console.error("Do something else here...");

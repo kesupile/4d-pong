@@ -1,4 +1,4 @@
-package internal
+package handlers
 
 import (
 	"encoding/base64"
@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"path/filepath"
+	games "server/game"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/pion/webrtc/v3"
@@ -43,37 +44,18 @@ func startNewPeerConnection(sessionDescription string, gameId string, ready chan
 		},
 	}
 
-	closeGoRoutine := make(chan bool)
-
 	peerConnection, err := webrtc.NewPeerConnection(config)
 	if err != nil {
 		panic(err)
 	}
-	defer func() {
-		log.Println("In defer function...Closing peerConnection...")
+
+	err = games.RegisterPeerConnection(gameId, peerConnection)
+
+	if err != nil {
 		if cErr := peerConnection.Close(); cErr != nil {
 			fmt.Printf("Cannot close peerConnection %v\n", cErr)
 		}
-	}()
-
-	// Set the handler for Peer connection state
-	// This will notify you when the peer has connected/disconnected
-	peerConnection.OnConnectionStateChange(func(s webrtc.PeerConnectionState) {
-		fmt.Printf("Peer Connection State has changed: %s\n", s.String())
-
-		if s == webrtc.PeerConnectionStateFailed {
-			// Wait until PeerConnection has had no network activity for 30 seconds or another failure. It may be reconnected using an ICE Restart.
-			// Use webrtc.PeerConnectionStateDisconnected if you are interested in detecting faster timeout.
-			// Note that the PeerConnection may come back from PeerConnectionStateDisconnected.
-			fmt.Println("Peer Connection has gone to failed exiting")
-			closeGoRoutine <- true
-		}
-	})
-
-	// Register data channel creation handling
-	peerConnection.OnDataChannel(func(dataChannel *webrtc.DataChannel) {
-		RegisterDataChanel(gameId, dataChannel)
-	})
+	}
 
 	sessionDescriptionBytes, sessionDecodingErr := base64.StdEncoding.DecodeString(sessionDescription)
 	if sessionDecodingErr != nil {
@@ -122,13 +104,11 @@ func startNewPeerConnection(sessionDescription string, gameId string, ready chan
 	localDescription := base64.StdEncoding.EncodeToString(outputAnswerBytes)
 
 	ready <- localDescription
-
-	<-closeGoRoutine
 }
 
-func getGameFromRequest(req *http.Request) *Game {
+func getGameFromRequest(req *http.Request) *games.Game {
 	gameId := chi.URLParam(req, "gameId")
-	game, _ := GetGame(gameId)
+	game, _ := games.GetGame(gameId)
 	return game
 }
 
@@ -138,11 +118,15 @@ func HandleGameStatusGET(w http.ResponseWriter, req *http.Request) {
 	type Response struct {
 		Active               bool `json:"active"`
 		AcceptingConnections bool `json:"acceptingConnections"`
+		Height               int  `json:"height"`
+		Width                int  `json:"width"`
 	}
 
 	writeJsonResponse(w, Response{
 		Active:               game.Active,
 		AcceptingConnections: game.IsAcceptingConnections(),
+		Height:               game.Height,
+		Width:                game.Width,
 	})
 	w.WriteHeader(http.StatusOK)
 }
@@ -177,7 +161,7 @@ func HandleGameJoinPOST(w http.ResponseWriter, req *http.Request) {
 }
 
 func HandleNewGamePOST(w http.ResponseWriter, req *http.Request) {
-	game := CreateGame()
+	game := games.CreateGame()
 
 	type NewGameResponse struct {
 		Id string `json:"gameId"`
@@ -223,6 +207,6 @@ func HandleValidatedRestEndpoint(
 func ValidateGameId(w http.ResponseWriter, req *http.Request) bool {
 	gameId := chi.URLParam(req, "gameId")
 	log.Println("gameId...", gameId)
-	_, ok := GetGame(gameId)
+	_, ok := games.GetGame(gameId)
 	return ok
 }

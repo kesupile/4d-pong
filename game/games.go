@@ -1,19 +1,26 @@
-package internal
+package games
 
 import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 
 	"github.com/google/uuid"
 	"github.com/pion/webrtc/v3"
 )
 
 type Player struct {
-	DataChannel *webrtc.DataChannel
-	Position    string
-	Coordinates *[2]int
-	Dimensions  *[2]int
+	PeerConnection *webrtc.PeerConnection
+	DataChannel    *webrtc.DataChannel
+	Position       string
+	Coordinates    *[2]int
+	Dimensions     *[2]int
+}
+
+type GameEvent struct {
+	Type string
+	Data any
 }
 
 type Game struct {
@@ -27,6 +34,7 @@ type Game struct {
 	BottomPlayer      *Player
 	LeftPlayer        *Player
 	RightPlayer       *Player
+	events            chan GameEvent
 }
 
 func (game *Game) IsAcceptingConnections() bool {
@@ -96,8 +104,10 @@ func CreateGame() *Game {
 		Height:            200,
 		NPlayers:          2,
 		NPlayersConnected: 0,
+		events:            make(chan GameEvent),
 	}
 
+	go game.listenForEvents()
 	gameStore[game.Id] = &game
 	return &game
 }
@@ -135,6 +145,22 @@ func handleDataChannelOpen(game *Game, player *Player) func() {
 	}
 }
 
+func (game *Game) listenForEvents() {
+listener:
+	for {
+		event := <-game.events
+
+		log.Println("New event", event.Type)
+
+		switch event.Type {
+		case CLEAN_UP_CONNECTION:
+			cleanUpConnection(game, event.Data.(string))
+		case STOP_LISTENING:
+			break listener
+		}
+	}
+}
+
 func attachDataChannelHandlers(game *Game, player *Player) {
 	dataChannel := player.DataChannel
 	label := dataChannel.Label()
@@ -149,10 +175,42 @@ func attachDataChannelHandlers(game *Game, player *Player) {
 
 	dataChannel.OnClose(func() {
 		fmt.Printf("Closing data channel: %s", label)
+		game.events <- GameEvent{Type: CLEAN_UP_CONNECTION, Data: player.Position}
 	})
 }
 
-func RegisterDataChanel(gameId string, dataChannel *webrtc.DataChannel) error {
+func registerDataChannel(game *Game, player *Player, dataChannel *webrtc.DataChannel) error {
+	player.DataChannel = dataChannel
+	attachDataChannelHandlers(game, player)
+	return nil
+}
+
+func attachPeerConnectionHandlers(game *Game, player *Player, peerConnection *webrtc.PeerConnection) {
+	// Set the handler for Peer connection state
+	// This will notify you when the peer has connected/disconnected
+	peerConnection.OnConnectionStateChange(func(s webrtc.PeerConnectionState) {
+		fmt.Printf("Peer Connection State has changed: %s\n", s.String())
+
+		if s == webrtc.PeerConnectionStateDisconnected {
+			game.events <- GameEvent{Type: CLEAN_UP_CONNECTION, Data: player.Position}
+		}
+
+		if s == webrtc.PeerConnectionStateFailed {
+			// Wait until PeerConnection has had no network activity for 30 seconds or another failure. It may be reconnected using an ICE Restart.
+			// Use webrtc.PeerConnectionStateDisconnected if you are interested in detecting faster timeout.
+			// Note that the PeerConnection may come back from PeerConnectionStateDisconnected.
+			fmt.Println("Peer Connection has gone to failed exiting")
+		}
+	})
+
+	// Register data channel creation handling
+	peerConnection.OnDataChannel(func(dataChannel *webrtc.DataChannel) {
+		registerDataChannel(game, player, dataChannel)
+	})
+
+}
+
+func RegisterPeerConnection(gameId string, peerConnection *webrtc.PeerConnection) error {
 	game, ok := GetGame(gameId)
 	if !ok {
 		return errors.New("no such game")
@@ -164,7 +222,7 @@ func RegisterDataChanel(gameId string, dataChannel *webrtc.DataChannel) error {
 		return err
 	}
 
-	player.DataChannel = dataChannel
-	attachDataChannelHandlers(game, player)
+	player.PeerConnection = peerConnection
+	attachPeerConnectionHandlers(game, player, peerConnection)
 	return nil
 }
