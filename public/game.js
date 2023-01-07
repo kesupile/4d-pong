@@ -43,20 +43,122 @@ const getGameStatus = () => {
   return fetch(`${origin}/api/game/${gameId}/status`).then((r) => r.json());
 };
 
-const initialiseGame = (details) => {
-  const gameContainer = document.getElementById("game");
-  gameContainer.style.width = `${details.width}px`;
-  gameContainer.style.height = `${details.height}px`;
-  gameContainer.style.backgroundColor = "black";
+const game = {
+  initialise(details) {
+    const gameContainer = document.getElementById("game");
+    gameContainer.style.width = `${details.width}px`;
+    gameContainer.style.height = `${details.height}px`;
+    gameContainer.style.backgroundColor = "black";
+    this.containerElement = gameContainer;
+  },
 
-  // const thisPlayerElement = document.createElement("div");
-  // thisPlayerElement.id = "top";
-  // thisPlayerElement.classList.add("player", "currentPlayer");
-  // thisPlayerElement.style.width = `${message.playerDimensions[0]}px`;
-  // thisPlayerElement.style.height = `${message.playerDimensions[1]}px`;
-  // thisPlayerElement.style.left = `${message.playerCoordinates[0]}px`;
-  // thisPlayerElement.style.top = `${message.playerCoordinates[1]}px`;
-  // gameContainer.appendChild(thisPlayerElement);
+  getContainerElement() {
+    return this.containerElement;
+  },
+
+  getPlayerElement(position) {
+    const key = `${position}Player`;
+    const element = this[key];
+
+    if (element) {
+      return element;
+    }
+
+    const thisPlayerElement = document.createElement("div");
+    thisPlayerElement.style.width = `50px`;
+    thisPlayerElement.style.height = `10px`;
+    thisPlayerElement.classList.add("player");
+    thisPlayerElement.id = key;
+    this.getContainerElement().appendChild(thisPlayerElement);
+    this[key] = thisPlayerElement;
+
+    return this[key];
+  },
+
+  getActivePlayerElements() {
+    const players = [];
+
+    if (this.topPlayer) {
+      players.push(this.topPlayer);
+    }
+
+    if (this.bottomPlayer) {
+      players.push(this.bottomPlayer);
+    }
+
+    if (this.leftPlayer) {
+      players.push(this.leftPlayer);
+    }
+
+    if (this.rightPlayer) {
+      players.push(this.rightPlayer);
+    }
+
+    return players;
+  },
+};
+
+const currentPlayer = {
+  setPosition(position) {
+    const oldPosition = this.position;
+    this.position = position;
+
+    if (oldPosition !== position) {
+      game.getActivePlayerElements().forEach((element) => {
+        const currentPlayerClass = "currentPlayer";
+        if (element.id === `${position}Player`) {
+          element.classList.add(currentPlayerClass);
+        } else {
+          element.classList.remove(currentPlayerClass);
+        }
+      });
+    }
+  },
+  getElement() {
+    return game.getPlayerElement(this.position);
+  },
+};
+
+const drawPlayer = ({ position, isCurrent, x, y, height, width }) => {
+  const playerElement = game.getPlayerElement(position);
+
+  playerElement.style.left = `${x}px`;
+  playerElement.style.top = `${y}px`;
+  playerElement.style.width = `${width}px`;
+  playerElement.style.height = `${height}px`;
+
+  if (isCurrent) {
+    currentPlayer.setPosition(position);
+  }
+};
+
+const chunkSize = 6;
+const positions = ["top", "bottom", "left", "right"];
+const handleGeneralUpdateMessage = (data) => {
+  let i = 1;
+  for (const position of positions) {
+    if (data[i]) {
+      drawPlayer({
+        position,
+        isCurrent: data[i + 1],
+        x: data[i + 2],
+        width: data[i + 4],
+        y: data[i + 3],
+        height: data[i + 5],
+      });
+    }
+    i += chunkSize;
+  }
+};
+
+const handleMessage = (message) => {
+  const data = new Uint8Array(message.data);
+  switch (data[0]) {
+    case 0:
+      return handleGeneralUpdateMessage(data);
+    default:
+      return;
+  }
 };
 
 const startNewConnection = () => {
@@ -101,19 +203,7 @@ const startNewConnection = () => {
     }
   };
 
-  sendChannel.onmessage = (message) => {
-    if (typeof message.data === "string") {
-      const data = JSON.parse(message.data);
-      log(data);
-
-      switch (data.type) {
-        case "init":
-          initialiseGame(data);
-        default:
-          console.error("String message with unknown type");
-      }
-    }
-  };
+  sendChannel.onmessage = handleMessage;
 };
 
 window.addEventListener("DOMContentLoaded", () => {
@@ -121,7 +211,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
   getGameStatus().then((res) => {
     if (res.acceptingConnections) {
-      initialiseGame(res);
+      game.initialise(res);
       return startNewConnection();
     }
     return console.error("Do something else here...");

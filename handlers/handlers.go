@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"path/filepath"
 	games "server/game"
@@ -206,7 +205,6 @@ func HandleValidatedRestEndpoint(
 
 func ValidateGameId(w http.ResponseWriter, req *http.Request) bool {
 	gameId := chi.URLParam(req, "gameId")
-	log.Println("gameId...", gameId)
 	_, ok := games.GetGame(gameId)
 	return ok
 }

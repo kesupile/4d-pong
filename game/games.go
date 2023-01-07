@@ -1,7 +1,6 @@
 package games
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -16,6 +15,9 @@ type Player struct {
 	Position       string
 	Coordinates    *[2]int
 	Dimensions     *[2]int
+	IsActive       bool
+	MagX           int
+	MagY           int
 }
 
 type GameEvent struct {
@@ -24,21 +26,22 @@ type GameEvent struct {
 }
 
 type Game struct {
-	Id                string
-	NPlayers          int
-	NPlayersConnected int
-	Active            bool
-	Width             int
-	Height            int
-	TopPlayer         *Player
-	BottomPlayer      *Player
-	LeftPlayer        *Player
-	RightPlayer       *Player
-	events            chan GameEvent
+	Id                  string
+	NPlayers            int
+	NPlayersConnected   int
+	StatusUpdatesActive bool
+	Active              bool
+	Width               int
+	Height              int
+	TopPlayer           *Player
+	BottomPlayer        *Player
+	LeftPlayer          *Player
+	RightPlayer         *Player
+	events              chan GameEvent
+	stopStatusUpdates   chan bool
 }
 
 func (game *Game) IsAcceptingConnections() bool {
-	fmt.Printf("N players %v, Connected %v \n", game.NPlayers, game.NPlayersConnected)
 	return game.NPlayersConnected < game.NPlayers
 }
 
@@ -47,7 +50,11 @@ func (game *Game) FindPlayerToAssign() (*Player, error) {
 		return nil, errors.New("maximum players reached")
 	}
 
-	player := &Player{}
+	// TODO: Consider side players
+	player := &Player{
+		MagX: 50,
+		MagY: 10,
+	}
 
 	baseWidth := 60
 	baseHeight := 20
@@ -97,7 +104,7 @@ func (game *Game) FindPlayerToAssign() (*Player, error) {
 var gameStore = map[string]*Game{}
 
 func CreateGame() *Game {
-	game := Game{
+	game := &Game{
 		Id:                uuid.NewString(),
 		Active:            false,
 		Width:             200,
@@ -105,11 +112,12 @@ func CreateGame() *Game {
 		NPlayers:          2,
 		NPlayersConnected: 0,
 		events:            make(chan GameEvent),
+		stopStatusUpdates: make(chan bool),
 	}
 
 	go game.listenForEvents()
-	gameStore[game.Id] = &game
-	return &game
+	gameStore[game.Id] = game
+	return game
 }
 
 func GetGame(id string) (*Game, bool) {
@@ -119,29 +127,8 @@ func GetGame(id string) (*Game, bool) {
 
 func handleDataChannelOpen(game *Game, player *Player) func() {
 	return func() {
-		dataChannel := player.DataChannel
-		fmt.Print("Data channel has been opened: ", dataChannel.Label())
-		game.NPlayersConnected += 1
-
-		type InitMessage struct {
-			Type              string `json:"type"`
-			PlayerPosition    string `json:"playerPosition"`
-			PlayerCoordinates [2]int `json:"playerCoordinates"`
-			PlayerDimensions  [2]int `json:"playerDimensions"`
-			Height            int    `json:"height"`
-			Width             int    `json:"width"`
-		}
-
-		message, _ := json.Marshal(InitMessage{
-			Type:              "init",
-			PlayerPosition:    player.Position,
-			PlayerCoordinates: *player.Coordinates,
-			PlayerDimensions:  *player.Dimensions,
-			Height:            game.Height,
-			Width:             game.Width,
-		})
-
-		dataChannel.SendText(string(message))
+		game.events <- GameEvent{Type: ACTIVATE_PLAYER, Data: player.Position}
+		game.events <- GameEvent{Type: START_STATUS_UPDATES}
 	}
 }
 
@@ -150,11 +137,18 @@ listener:
 	for {
 		event := <-game.events
 
-		log.Println("New event", event.Type)
+		yellowColour := "\033[33m"
+		resetColour := "\033[0m"
+
+		log.Println(string(yellowColour), "New event", event.Type, string(resetColour))
 
 		switch event.Type {
 		case CLEAN_UP_CONNECTION:
 			cleanUpConnection(game, event.Data.(string))
+		case ACTIVATE_PLAYER:
+			activatePlayer(game, event.Data.(string))
+		case START_STATUS_UPDATES:
+			go startStatusUpdates(game)
 		case STOP_LISTENING:
 			break listener
 		}

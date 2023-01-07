@@ -1,10 +1,6 @@
 package games
 
-import "log"
-
 func cleanUpConnection(game *Game, position string) {
-	log.Println("Cleaning up connection", position)
-
 	var player *Player
 	switch position {
 	case "top":
@@ -21,6 +17,7 @@ func cleanUpConnection(game *Game, position string) {
 		game.RightPlayer = nil
 	}
 
+	player.IsActive = false
 	game.NPlayersConnected = game.NPlayersConnected - 1
 	dataChannel := player.DataChannel
 
