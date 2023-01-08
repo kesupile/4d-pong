@@ -2,14 +2,21 @@
 <html>
   <head>
     <style>
+      html, body {
+        padding: 0px;
+        margin: 0px;
+      }
+
       #game {
         position: relative;
+        transform-origin: top left;
       }
 
       .player {
         position: absolute;
         z-index: 1;
         background-color: white;
+        border-radius: 3px;
       }
 
       .player.currentPlayer {
@@ -18,7 +25,6 @@
     </style>
   </head>
   <body>
-    Game!
     <div id="game"></div>
     <script type="text/javascript" src="./game.js"></script>
   </body>

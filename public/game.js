@@ -1,4 +1,12 @@
+const debugOnScreen = false;
+
 const log = (data) => {
+  console.log(data);
+
+  if (!debugOnScreen) {
+    return;
+  }
+
   if (!body) {
     body = document.getElementsByTagName("body")[0];
   }
@@ -13,7 +21,6 @@ const log = (data) => {
   }
 
   lastElement = nextElement;
-  console.log(data);
 };
 
 const dataChannelLabel = window.crypto.randomUUID();
@@ -49,7 +56,23 @@ const game = {
     gameContainer.style.width = `${details.width}px`;
     gameContainer.style.height = `${details.height}px`;
     gameContainer.style.backgroundColor = "black";
+
     this.containerElement = gameContainer;
+    this.details = details;
+
+    this.scale();
+  },
+
+  scale() {
+    const container = this.getContainerElement();
+    if (!container) {
+      return;
+    }
+
+    const minHeightWidth = Math.min(window.innerHeight, window.innerWidth);
+    const scaleFactor = minHeightWidth / this.details.width;
+
+    container.style.transform = `scale(${scaleFactor})`;
   },
 
   getContainerElement() {
@@ -216,4 +239,6 @@ window.addEventListener("DOMContentLoaded", () => {
     }
     return console.error("Do something else here...");
   });
+
+  window.addEventListener("resize", () => game.scale());
 });

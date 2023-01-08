@@ -41,6 +41,11 @@ type Game struct {
 	stopStatusUpdates   chan bool
 }
 
+var GAME_WIDTH = 100
+var GAME_HEIGHT = 100
+var PLAYER_WIDTH = 25
+var PLAYER_HEIGHT = 3
+
 func (game *Game) IsAcceptingConnections() bool {
 	return game.NPlayersConnected < game.NPlayers
 }
@@ -53,9 +58,7 @@ func (game *Game) FindPlayerToAssign() (*Player, error) {
 	player := &Player{}
 
 	// TODO: Left and right players
-	baseWidth := 50
-	baseHeight := 10
-	middleXPosition := (game.Width / 2) - baseWidth/2
+	middleXPosition := (game.Width / 2) - PLAYER_WIDTH/2
 
 	var topLeftCoordinates [2]int
 	var dimensions [2]int
@@ -68,26 +71,26 @@ func (game *Game) FindPlayerToAssign() (*Player, error) {
 		topLeftCoordinates[1] = 0
 		player.Coordinates = &topLeftCoordinates
 
-		dimensions[0] = baseWidth
-		dimensions[1] = baseHeight
+		dimensions[0] = PLAYER_WIDTH
+		dimensions[1] = PLAYER_HEIGHT
 		player.Dimensions = &dimensions
 
-		player.MagX = baseWidth
-		player.MagY = baseHeight
+		player.MagX = PLAYER_WIDTH
+		player.MagY = PLAYER_HEIGHT
 
 		game.TopPlayer = player
 	case game.BottomPlayer == nil:
 		player.Position = "bottom"
 		topLeftCoordinates[0] = middleXPosition
-		topLeftCoordinates[1] = game.Height - baseHeight
+		topLeftCoordinates[1] = game.Height - PLAYER_HEIGHT
 		player.Coordinates = &topLeftCoordinates
 
-		dimensions[0] = baseWidth
-		dimensions[1] = baseHeight
+		dimensions[0] = PLAYER_WIDTH
+		dimensions[1] = PLAYER_HEIGHT
 		player.Dimensions = &dimensions
 
-		player.MagX = baseWidth
-		player.MagY = baseHeight
+		player.MagX = PLAYER_WIDTH
+		player.MagY = PLAYER_HEIGHT
 
 		game.BottomPlayer = player
 	case game.LeftPlayer == nil:
@@ -107,8 +110,8 @@ func CreateGame() *Game {
 	game := &Game{
 		Id:                uuid.NewString(),
 		Active:            false,
-		Width:             200,
-		Height:            200,
+		Width:             GAME_WIDTH,
+		Height:            GAME_HEIGHT,
 		NPlayers:          2,
 		NPlayersConnected: 0,
 		events:            make(chan GameEvent),
