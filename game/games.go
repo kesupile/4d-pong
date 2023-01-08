@@ -50,44 +50,44 @@ func (game *Game) FindPlayerToAssign() (*Player, error) {
 		return nil, errors.New("maximum players reached")
 	}
 
-	// TODO: Consider side players
-	player := &Player{
-		MagX: 50,
-		MagY: 10,
-	}
+	player := &Player{}
 
-	baseWidth := 60
-	baseHeight := 20
-	x2 := (game.Width / 2) - baseWidth/2
+	// TODO: Left and right players
+	baseWidth := 50
+	baseHeight := 10
+	middleXPosition := (game.Width / 2) - baseWidth/2
 
-	// The centre point of the player
-	var pos [2]int
-
-	// The width and height of the representing player element
-	var dim [2]int
+	var topLeftCoordinates [2]int
+	var dimensions [2]int
 
 	switch {
 	case game.TopPlayer == nil:
 		player.Position = "top"
 
-		pos[0] = x2
-		pos[1] = 0
-		player.Coordinates = &pos
+		topLeftCoordinates[0] = middleXPosition
+		topLeftCoordinates[1] = 0
+		player.Coordinates = &topLeftCoordinates
 
-		dim[0] = baseWidth
-		dim[1] = baseHeight
-		player.Dimensions = &dim
+		dimensions[0] = baseWidth
+		dimensions[1] = baseHeight
+		player.Dimensions = &dimensions
+
+		player.MagX = baseWidth
+		player.MagY = baseHeight
 
 		game.TopPlayer = player
 	case game.BottomPlayer == nil:
 		player.Position = "bottom"
-		pos[0] = x2
-		pos[1] = game.Height - baseHeight
-		player.Coordinates = &pos
+		topLeftCoordinates[0] = middleXPosition
+		topLeftCoordinates[1] = game.Height - baseHeight
+		player.Coordinates = &topLeftCoordinates
 
-		dim[0] = baseWidth
-		dim[1] = baseHeight
-		player.Dimensions = &dim
+		dimensions[0] = baseWidth
+		dimensions[1] = baseHeight
+		player.Dimensions = &dimensions
+
+		player.MagX = baseWidth
+		player.MagY = baseHeight
 
 		game.BottomPlayer = player
 	case game.LeftPlayer == nil:
