@@ -41,11 +41,6 @@ type Game struct {
 	stopStatusUpdates   chan bool
 }
 
-var GAME_WIDTH = 100
-var GAME_HEIGHT = 100
-var PLAYER_WIDTH = 25
-var PLAYER_HEIGHT = 3
-
 func (game *Game) IsAcceptingConnections() bool {
 	return game.NPlayersConnected < game.NPlayers
 }
@@ -154,6 +149,8 @@ listener:
 			go startStatusUpdates(game)
 		case STOP_LISTENING:
 			break listener
+		case REGISTER_PLAYER_MOVEMENT:
+			registerPlayerMovement(game, event.Data.(RegisterPlayerMovementData))
 		}
 	}
 }
@@ -166,8 +163,11 @@ func attachDataChannelHandlers(game *Game, player *Player) {
 	dataChannel.OnOpen(handleDataChannelOpen(game, player))
 
 	// Register text message handling
-	dataChannel.OnMessage(func(msg webrtc.DataChannelMessage) {
-		fmt.Printf("Message from DataChannel: '%s': '%s'\n", label, string(msg.Data))
+	dataChannel.OnMessage(func(message webrtc.DataChannelMessage) {
+		game.events <- GameEvent{Type: REGISTER_PLAYER_MOVEMENT, Data: RegisterPlayerMovementData{
+			Player:  player,
+			Message: message.Data,
+		}}
 	})
 
 	dataChannel.OnClose(func() {

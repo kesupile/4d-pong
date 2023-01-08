@@ -1,5 +1,9 @@
 const debugOnScreen = false;
 
+const KEYBOARD_SEND_INTERVAL = 35;
+
+let dataChannel;
+
 const log = (data) => {
   console.log(data);
 
@@ -135,10 +139,86 @@ const currentPlayer = {
           element.classList.remove(currentPlayerClass);
         }
       });
+
+      this.setKeyboardEventListener();
     }
   },
+
   getElement() {
     return game.getPlayerElement(this.position);
+  },
+
+  keyCodeByPositionMap: {
+    top: {
+      ArrowLeft: 0,
+      ArrowRight: 1,
+    },
+    bottom: {
+      ArrowLeft: 0,
+      ArrowRight: 1,
+    },
+    left: {
+      ArrowUp: 0,
+      ArrowDown: 1,
+    },
+    right: {
+      ArrowUp: 0,
+      ArrowDown: 1,
+    },
+  },
+
+  getValidKeyCodeByte(e) {
+    return this.keyCodeByPositionMap[this.position][e.key];
+  },
+
+  setKeyboardEventListener() {
+    window.removeEventListener("keydown", this.keydownEventListener);
+    window.removeEventListener("keyup", this.keyupEventListener);
+
+    let keyByte;
+    let moving = false;
+    let sendKey;
+
+    this.keydownEventListener = (e) => {
+      const code = this.getValidKeyCodeByte(e);
+      if (typeof code !== "number") {
+        return;
+      }
+
+      if (keyByte !== code) {
+        keyByte = code;
+        clearInterval(sendKey);
+      } else if (moving) {
+        return;
+      }
+
+      const arr = new Uint8Array(2);
+      arr[0] = 0;
+      arr[1] = code;
+
+      sendKey = setInterval(() => {
+        dataChannel.send(arr);
+      }, KEYBOARD_SEND_INTERVAL);
+
+      log("setting moving...");
+      moving = true;
+    };
+
+    this.keyupEventListener = (e) => {
+      const code = this.getValidKeyCodeByte(e);
+      if (typeof code !== "number") {
+        return;
+      }
+
+      if (keyByte === code) {
+        keyByte = undefined;
+        clearInterval(sendKey);
+        moving = false;
+      }
+    };
+
+    window.addEventListener("keydown", this.keydownEventListener);
+    window.addEventListener("keyup", this.keyupEventListener);
   },
 };
 
@@ -199,7 +279,7 @@ const startNewConnection = () => {
       .then((d) => pc.setLocalDescription(d))
       .catch(log);
 
-  const sendChannel = pc.createDataChannel(dataChannelLabel);
+  dataChannel = pc.createDataChannel(dataChannelLabel);
 
   pc.oniceconnectionstatechange = (e) => log(pc.iceConnectionState);
   pc.onicecandidate = (event) => {
@@ -226,7 +306,7 @@ const startNewConnection = () => {
     }
   };
 
-  sendChannel.onmessage = handleMessage;
+  dataChannel.onmessage = handleMessage;
 };
 
 window.addEventListener("DOMContentLoaded", () => {
