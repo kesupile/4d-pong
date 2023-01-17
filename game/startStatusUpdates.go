@@ -21,7 +21,28 @@ func sendMessageForPlayer(player *Player, positions []byte) {
 }
 
 func makePositionsArray() []byte {
-	return make([]byte, 25) // Ignore the ball for now
+	return make([]byte, 29)
+}
+
+func normaliseBallPosition(ball *Ball) (int, int, int) {
+	radius := int(ball.Radius)
+	x := int(ball.CentrePosition[0]) - radius/2
+	y := int(ball.CentrePosition[1]) - radius/2
+	return radius, x, y
+}
+
+func updateBallPositions(game *Game, positions []byte) {
+	ball := game.Balls[0]
+	if !ball.IsVisible {
+		return
+	}
+
+	radius, x, y := normaliseBallPosition(ball)
+
+	positions[25] = byte(1)
+	positions[26] = byte(radius)
+	positions[27] = byte(x)
+	positions[28] = byte(y)
 }
 
 func getGamePositions(game *Game) []byte {
@@ -60,6 +81,8 @@ func getGamePositions(game *Game) []byte {
 		positions[23] = byte(game.RightPlayer.MagX)
 		positions[24] = byte(game.RightPlayer.MagY)
 	}
+
+	updateBallPositions(game, positions)
 
 	return positions
 }

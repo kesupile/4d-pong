@@ -12,6 +12,16 @@
         transform-origin: top left;
       }
 
+      /* #game::after{
+        width: 1px;
+        height: 100%;
+        border: 1px solid pink;
+        position: absolute;
+        content: " ";
+        left: 50%;
+        font-size: 0px;
+      } */
+
       .player {
         position: absolute;
         z-index: 1;
@@ -21,6 +31,12 @@
 
       .player.currentPlayer {
         background-color: yellow;
+      }
+
+      .ball {
+        position: absolute;
+        background-color: white;
+        border-radius: 100%;
       }
     </style>
   </head>

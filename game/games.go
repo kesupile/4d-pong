@@ -3,11 +3,17 @@ package games
 import (
 	"errors"
 	"fmt"
-	"log"
 
 	"github.com/google/uuid"
 	"github.com/pion/webrtc/v3"
 )
+
+type Ball struct {
+	IsVisible      bool
+	CentrePosition *[2]float32
+	Velocity       *[2]float32
+	Radius         float32
+}
 
 type Player struct {
 	PeerConnection *webrtc.PeerConnection
@@ -39,6 +45,7 @@ type Game struct {
 	RightPlayer         *Player
 	events              chan GameEvent
 	stopStatusUpdates   chan bool
+	Balls               *[1]*Ball
 }
 
 func (game *Game) IsAcceptingConnections() bool {
@@ -102,6 +109,26 @@ func (game *Game) FindPlayerToAssign() (*Player, error) {
 var gameStore = map[string]*Game{}
 
 func CreateGame() *Game {
+	var balls [1](*Ball)
+	centrePosition := [2]float32{
+		float32(GAME_WIDTH / 2),
+		float32(GAME_HEIGHT / 2),
+	}
+
+	velocity := [2]float32{
+		float32(-3),
+		float32(0),
+	}
+
+	firstBall := Ball{
+		CentrePosition: &centrePosition,
+		Velocity:       &velocity,
+		Radius:         float32(DEFAULT_BALL_RADIUS),
+		IsVisible:      true,
+	}
+
+	balls[0] = &firstBall
+
 	game := &Game{
 		Id:                uuid.NewString(),
 		Active:            false,
@@ -111,6 +138,7 @@ func CreateGame() *Game {
 		NPlayersConnected: 0,
 		events:            make(chan GameEvent),
 		stopStatusUpdates: make(chan bool),
+		Balls:             &balls,
 	}
 
 	go game.listenForEvents()
@@ -134,11 +162,6 @@ func (game *Game) listenForEvents() {
 listener:
 	for {
 		event := <-game.events
-
-		yellowColour := "\033[33m"
-		resetColour := "\033[0m"
-
-		log.Println(string(yellowColour), "New event", event.Type, string(resetColour))
 
 		switch event.Type {
 		case CLEAN_UP_CONNECTION:

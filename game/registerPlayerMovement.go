@@ -1,9 +1,5 @@
 package games
 
-import (
-	"fmt"
-)
-
 type RegisterPlayerMovementData struct {
 	Player  *Player
 	Message []byte
@@ -40,8 +36,6 @@ func updateHorizontalPlayerPosition(game *Game, player *Player, message []byte) 
 	}
 
 	player.Coordinates[0] = nextXPosition
-	fmt.Println("Register player movement")
-
 }
 
 func registerPlayerMovement(game *Game, data RegisterPlayerMovementData) {

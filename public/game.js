@@ -55,6 +55,8 @@ const getGameStatus = () => {
 };
 
 const game = {
+  balls: [],
+
   initialise(details) {
     const gameContainer = document.getElementById("game");
     gameContainer.style.width = `${details.width}px`;
@@ -122,6 +124,24 @@ const game = {
     }
 
     return players;
+  },
+
+  getBall(index, radius) {
+    let ball = this.balls[index];
+    if (ball) {
+      return ball;
+    }
+
+    ball = document.createElement("div");
+    ball.dataset.ballId = index;
+    ball.classList.add("ball");
+    ball.style.width = `${radius}px`;
+    ball.style.height = `${radius}px`;
+
+    this.getContainerElement().appendChild(ball);
+
+    this.balls[index] = ball;
+    return ball;
   },
 };
 
@@ -235,11 +255,20 @@ const drawPlayer = ({ position, isCurrent, x, y, height, width }) => {
   }
 };
 
-const chunkSize = 6;
-const positions = ["top", "bottom", "left", "right"];
+const drawBall = ({ x, y, radius, index }) => {
+  const ball = game.getBall(index, radius);
+  ball.style.left = `${x}px`;
+  ball.style.top = `${y}px`;
+};
+
+const playerChunkSize = 6;
+const playerPositions = ["top", "bottom", "left", "right"];
+const ballChunkSize = 4;
 const handleGeneralUpdateMessage = (data) => {
   let i = 1;
-  for (const position of positions) {
+
+  // Draw players
+  for (const position of playerPositions) {
     if (data[i]) {
       drawPlayer({
         position,
@@ -250,7 +279,24 @@ const handleGeneralUpdateMessage = (data) => {
         height: data[i + 5],
       });
     }
-    i += chunkSize;
+    i += playerChunkSize;
+  }
+
+  // Draw balls
+  const ballStartIndex = playerPositions.length * 6 - 1;
+  while (i < data.length) {
+    if (!data[i]) {
+      return;
+    }
+
+    drawBall({
+      index: Math.floor((i - ballStartIndex) / ballChunkSize),
+      radius: data[i + 1],
+      x: data[i + 2],
+      y: data[i + 3],
+    });
+
+    i += ballChunkSize;
   }
 };
 
