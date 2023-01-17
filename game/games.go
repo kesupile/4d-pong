@@ -44,7 +44,8 @@ type Game struct {
 	LeftPlayer          *Player
 	RightPlayer         *Player
 	events              chan GameEvent
-	stopStatusUpdates   chan bool
+	StopStatusUpdates   chan bool
+	StopGame            chan bool
 	Balls               *[1]*Ball
 }
 
@@ -137,7 +138,8 @@ func CreateGame() *Game {
 		NPlayers:          2,
 		NPlayersConnected: 0,
 		events:            make(chan GameEvent),
-		stopStatusUpdates: make(chan bool),
+		StopStatusUpdates: make(chan bool),
+		StopGame:          make(chan bool),
 		Balls:             &balls,
 	}
 

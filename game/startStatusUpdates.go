@@ -125,7 +125,7 @@ func startStatusUpdates(game *Game) {
 
 	for {
 		select {
-		case <-game.stopStatusUpdates:
+		case <-game.StopStatusUpdates:
 			game.StatusUpdatesActive = false
 			ticker.Stop()
 		case <-ticker.C:
