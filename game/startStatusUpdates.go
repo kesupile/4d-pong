@@ -45,41 +45,33 @@ func updateBallPositions(game *Game, positions []byte) {
 	positions[28] = byte(y)
 }
 
+func setPlayerPosition(player *Player, positions []byte, startIndex int) {
+	positions[startIndex] = byte(1)
+	positions[startIndex+2] = byte(player.Coordinates[0])
+	positions[startIndex+3] = byte(player.Coordinates[1])
+	positions[startIndex+4] = byte(player.MagX)
+	positions[startIndex+5] = byte(player.MagY)
+}
+
 func getGamePositions(game *Game) []byte {
 	positions := makePositionsArray()
 
 	positions[0] = byte(0)
 
 	if game.TopPlayer != nil && game.TopPlayer.IsActive {
-		positions[1] = byte(1)
-		positions[3] = byte(game.TopPlayer.Coordinates[0])
-		positions[4] = byte(game.TopPlayer.Coordinates[1])
-		positions[5] = byte(game.TopPlayer.MagX)
-		positions[6] = byte(game.TopPlayer.MagY)
+		setPlayerPosition(game.TopPlayer, positions, 1)
 	}
 
 	if game.BottomPlayer != nil && game.BottomPlayer.IsActive {
-		positions[7] = byte(1)
-		positions[9] = byte(game.BottomPlayer.Coordinates[0])
-		positions[10] = byte(game.BottomPlayer.Coordinates[1])
-		positions[11] = byte(game.BottomPlayer.MagX)
-		positions[12] = byte(game.BottomPlayer.MagY)
+		setPlayerPosition(game.BottomPlayer, positions, 7)
 	}
 
 	if game.LeftPlayer != nil && game.LeftPlayer.IsActive {
-		positions[13] = byte(1)
-		positions[15] = byte(game.LeftPlayer.Coordinates[0])
-		positions[16] = byte(game.LeftPlayer.Coordinates[1])
-		positions[17] = byte(game.LeftPlayer.MagX)
-		positions[18] = byte(game.LeftPlayer.MagY)
+		setPlayerPosition(game.TopPlayer, positions, 13)
 	}
 
 	if game.RightPlayer != nil && game.RightPlayer.IsActive {
-		positions[19] = byte(1)
-		positions[21] = byte(game.RightPlayer.Coordinates[0])
-		positions[22] = byte(game.RightPlayer.Coordinates[1])
-		positions[23] = byte(game.RightPlayer.MagX)
-		positions[24] = byte(game.RightPlayer.MagY)
+		setPlayerPosition(game.TopPlayer, positions, 19)
 	}
 
 	updateBallPositions(game, positions)

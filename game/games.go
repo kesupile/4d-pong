@@ -117,8 +117,8 @@ func CreateGame() *Game {
 	}
 
 	velocity := [2]float32{
-		float32(-3),
-		float32(0),
+		float32(0.5),
+		float32(-0.4),
 	}
 
 	firstBall := Ball{
@@ -160,6 +160,30 @@ func handleDataChannelOpen(game *Game, player *Player) func() {
 	}
 }
 
+func allPlayersAreReady(game *Game) bool {
+	if !game.TopPlayer.IsActive {
+		return false
+	}
+
+	if game.BottomPlayer == nil || !game.BottomPlayer.IsActive {
+		return false
+	}
+
+	if game.NPlayers == 2 {
+		return true
+	}
+
+	if game.LeftPlayer == nil || !game.LeftPlayer.IsActive {
+		return false
+	}
+
+	if game.NPlayers == 3 {
+		return true
+	}
+
+	return game.RightPlayer != nil && game.RightPlayer.IsActive
+}
+
 func (game *Game) listenForEvents() {
 listener:
 	for {
@@ -170,6 +194,9 @@ listener:
 			cleanUpConnection(game, event.Data.(string))
 		case ACTIVATE_PLAYER:
 			activatePlayer(game, event.Data.(string))
+			if allPlayersAreReady(game) {
+				go startGame(game)
+			}
 		case START_STATUS_UPDATES:
 			go startStatusUpdates(game)
 		case STOP_LISTENING:

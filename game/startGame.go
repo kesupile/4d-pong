@@ -1,8 +1,19 @@
 package games
 
-import "time"
+import (
+	"time"
+)
 
-func calculateGameStatus(game *Game) {}
+func updateBallPosition(ball *Ball) {
+	ball.CentrePosition[0] += ball.Velocity[0]
+	ball.CentrePosition[1] += ball.Velocity[1]
+}
+
+func calculateGameStatus(game *Game) {
+	for _, ball := range game.Balls {
+		updateBallPosition(ball)
+	}
+}
 
 func startGame(game *Game) {
 
