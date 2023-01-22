@@ -117,8 +117,8 @@ func CreateGame() *Game {
 	}
 
 	velocity := [2]float32{
-		float32(3),
-		float32(-1),
+		float32(-2.5),
+		float32(-2.5),
 	}
 
 	firstBall := Ball{
