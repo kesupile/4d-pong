@@ -1,5 +1,11 @@
 package games
 
+func triggerTermination(game *Game) {
+	game.events <- GameEvent{
+		Type: TERMINATE_GAME,
+	}
+}
+
 func cleanUpConnection(game *Game, position string) {
 	var player *Player
 	switch position {
@@ -26,4 +32,8 @@ func cleanUpConnection(game *Game, position string) {
 	}
 
 	player.PeerConnection.Close()
+
+	if game.Active && game.NPlayersConnected == 1 {
+		go triggerTermination(game)
+	}
 }

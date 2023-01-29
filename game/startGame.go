@@ -137,9 +137,12 @@ func getNextCollisionDetails(game *Game, ball *Ball) []FinalCollisionDetails {
 	return finalCollisionDetails
 }
 
-func updateBallVelocity(ball *Ball) {
-	ball.Velocity[0] = -1 * ball.Velocity[0]
-	ball.Velocity[1] = -1 * ball.Velocity[1]
+func updateBallVelocity(ball *Ball, side string) {
+	if side == "top" || side == "bottom" {
+		ball.Velocity[1] = -1 * ball.Velocity[1]
+	} else {
+		ball.Velocity[0] = -1 * ball.Velocity[0]
+	}
 }
 
 func updateBallPosition(ball *Ball) {
@@ -156,13 +159,15 @@ func calculateGameStatus(game *Game, finalCollisionDetails []FinalCollisionDetai
 
 	time.Sleep((time.Duration(int(frameFraction)*FRAME_TIME) * time.Millisecond))
 
-	if frameFraction < 1 {
-		for _, ball := range game.Balls {
-			updateBallVelocity(ball)
-		}
-	} else {
-		for _, ball := range game.Balls {
-			updateBallPosition(ball)
+	for _, collisionDetails := range finalCollisionDetails {
+		if frameFraction < 1 {
+			for _, ball := range game.Balls {
+				updateBallVelocity(ball, collisionDetails.Side)
+			}
+		} else {
+			for _, ball := range game.Balls {
+				updateBallPosition(ball)
+			}
 		}
 	}
 

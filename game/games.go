@@ -203,6 +203,8 @@ listener:
 			break listener
 		case REGISTER_PLAYER_MOVEMENT:
 			registerPlayerMovement(game, event.Data.(RegisterPlayerMovementData))
+		case TERMINATE_GAME:
+			terminateGame(game)
 		}
 	}
 }

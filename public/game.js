@@ -85,8 +85,12 @@ const game = {
     return this.containerElement;
   },
 
+  getPlayerKey(position) {
+    return `${position}Player`;
+  },
+
   getPlayerElement(position) {
-    const key = `${position}Player`;
+    const key = this.getPlayerKey(position);
     const element = this[key];
 
     if (element) {
@@ -102,6 +106,17 @@ const game = {
     this[key] = thisPlayerElement;
 
     return this[key];
+  },
+
+  removePlayerElement(position) {
+    const key = this.getPlayerKey(position);
+    const player = this[key];
+    if (!player) {
+      return;
+    }
+
+    this.getContainerElement().removeChild(player);
+    this[key] = undefined;
   },
 
   getActivePlayerElements() {
@@ -278,6 +293,8 @@ const handleGeneralUpdateMessage = (data) => {
         y: data[i + 3],
         height: data[i + 5],
       });
+    } else {
+      game.removePlayerElement(position);
     }
     i += playerChunkSize;
   }
