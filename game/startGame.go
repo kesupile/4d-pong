@@ -106,14 +106,16 @@ func findFirstCollision(game *Game, ball *Ball, allCollisionTimes []CollisionDet
 	if len(allCollisionTimes) == 1 {
 		return append(
 			finalDetails,
-			calculateFinalDetail(game, ball, allCollisionTimes[0]))
+			calculateFinalDetail(game, ball, allCollisionTimes[0]),
+		)
 	}
 
 	if allCollisionTimes[0].FramesToCollision == allCollisionTimes[1].FramesToCollision {
 		for _, collisionTime := range allCollisionTimes {
 			finalDetails = append(
 				finalDetails,
-				calculateFinalDetail(game, ball, collisionTime))
+				calculateFinalDetail(game, ball, collisionTime),
+			)
 		}
 		return finalDetails
 	}
@@ -121,12 +123,14 @@ func findFirstCollision(game *Game, ball *Ball, allCollisionTimes []CollisionDet
 	if allCollisionTimes[0].FramesToCollision < allCollisionTimes[1].FramesToCollision {
 		return append(
 			finalDetails,
-			calculateFinalDetail(game, ball, allCollisionTimes[0]))
+			calculateFinalDetail(game, ball, allCollisionTimes[0]),
+		)
 	}
 
 	return append(
 		finalDetails,
-		calculateFinalDetail(game, ball, allCollisionTimes[1]))
+		calculateFinalDetail(game, ball, allCollisionTimes[1]),
+	)
 }
 
 func getNextCollisionDetails(game *Game, ball *Ball) []FinalCollisionDetails {
@@ -180,7 +184,7 @@ func startPlayerEjection(game *Game, side string) {
 }
 
 func calculateGameStatus(game *Game, finalCollisionDetails []FinalCollisionDetails) {
-	if !game.Active {
+	if !game.IsActive {
 		return
 	}
 
@@ -221,12 +225,12 @@ func calculateGameStatus(game *Game, finalCollisionDetails []FinalCollisionDetai
 }
 
 func startGame(game *Game) {
-	game.Active = true
+	game.IsActive = true
 
 	go calculateGameStatus(game, []FinalCollisionDetails{
 		{FrameFraction: 1},
 	})
 
 	<-game.StopGame
-	game.Active = false
+	game.IsActive = false
 }

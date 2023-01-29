@@ -37,7 +37,7 @@ type Game struct {
 	NPlayers            int
 	NPlayersConnected   int
 	StatusUpdatesActive bool
-	Active              bool
+	IsActive            bool
 	Width               int
 	Height              int
 	TopPlayer           *Player
@@ -133,7 +133,7 @@ func CreateGame() *Game {
 
 	game := &Game{
 		Id:                uuid.NewString(),
-		Active:            false,
+		IsActive:          false,
 		Width:             GAME_WIDTH,
 		Height:            GAME_HEIGHT,
 		NPlayers:          2,

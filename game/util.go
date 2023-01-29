@@ -39,7 +39,7 @@ func startTermination(gameToEnd *Game) {
 }
 
 func tiggerTerminationIfRequired(game *Game) {
-	if !game.Active {
+	if !game.IsActive {
 		return
 	}
 
