@@ -150,6 +150,35 @@ func updateBallPosition(ball *Ball) {
 	ball.CentrePosition[1] += ball.Velocity[1]
 }
 
+func isBetween(number, lowerBound, upperBound int) bool {
+	return lowerBound <= number && number <= upperBound
+}
+
+func isPlayerInPosition(game *Game, player *Player, ball *Ball) bool {
+	if player.Position == "top" || player.Position == "bottom" {
+		x := player.Coordinates[0]
+		return isBetween(
+			int(ball.CentrePosition[0]),
+			x,
+			x+PLAYER_WIDTH,
+		)
+	}
+
+	y := player.Coordinates[1]
+	return isBetween(
+		int(ball.CentrePosition[1]),
+		y,
+		y+PLAYER_WIDTH,
+	)
+}
+
+func startPlayerEjection(game *Game, side string) {
+	game.events <- GameEvent{
+		Type: EJECT_PLAYER,
+		Data: side,
+	}
+}
+
 func calculateGameStatus(game *Game, finalCollisionDetails []FinalCollisionDetails) {
 	if !game.Active {
 		return
@@ -161,7 +190,19 @@ func calculateGameStatus(game *Game, finalCollisionDetails []FinalCollisionDetai
 
 	for _, collisionDetails := range finalCollisionDetails {
 		if frameFraction < 1 {
+			side := collisionDetails.Side
+			player := maybeGetActivePlayer(game, side)
+
+		ballCheckBlock:
 			for _, ball := range game.Balls {
+				if player != nil {
+					playerIsInPosition := isPlayerInPosition(game, player, ball)
+					if !playerIsInPosition {
+						go startPlayerEjection(game, side)
+						continue ballCheckBlock
+					}
+				}
+
 				updateBallVelocity(ball, collisionDetails.Side)
 			}
 		} else {

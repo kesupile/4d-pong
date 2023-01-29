@@ -1,29 +1,20 @@
 package games
 
-func triggerTermination(game *Game) {
-	game.events <- GameEvent{
-		Type: TERMINATE_GAME,
-	}
-}
-
 func cleanUpConnection(game *Game, position string) {
 	var player *Player
 	switch position {
 	case "top":
 		player = game.TopPlayer
-		game.TopPlayer = nil
 	case "bottom":
 		player = game.BottomPlayer
-		game.BottomPlayer = nil
 	case "left":
 		player = game.LeftPlayer
-		game.LeftPlayer = nil
 	case "right":
 		player = game.RightPlayer
-		game.RightPlayer = nil
 	}
 
 	player.IsActive = false
+	player.IsEjected = true
 	game.NPlayersConnected = game.NPlayersConnected - 1
 	dataChannel := player.DataChannel
 
@@ -33,7 +24,5 @@ func cleanUpConnection(game *Game, position string) {
 
 	player.PeerConnection.Close()
 
-	if game.Active && game.NPlayersConnected == 1 {
-		go triggerTermination(game)
-	}
+	tiggerTerminationIfRequired(game)
 }

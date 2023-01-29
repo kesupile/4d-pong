@@ -88,19 +88,19 @@ func sendGameStatusToPlayers(game *Game) {
 		return destination
 	}
 
-	if game.TopPlayer != nil && game.TopPlayer.IsActive {
+	if playerIsActive(game, "top") {
 		sendMessageForPlayer(game.TopPlayer, generatePositionsCopy())
 	}
 
-	if game.BottomPlayer != nil && game.BottomPlayer.IsActive {
+	if playerIsActive(game, "bottom") {
 		sendMessageForPlayer(game.BottomPlayer, generatePositionsCopy())
 	}
 
-	if game.LeftPlayer != nil && game.LeftPlayer.IsActive {
+	if playerIsActive(game, "left") {
 		sendMessageForPlayer(game.LeftPlayer, generatePositionsCopy())
 	}
 
-	if game.RightPlayer != nil && game.RightPlayer.IsActive {
+	if playerIsActive(game, "right") {
 		sendMessageForPlayer(game.RightPlayer, generatePositionsCopy())
 	}
 }

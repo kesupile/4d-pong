@@ -24,6 +24,7 @@ type Player struct {
 	IsActive       bool
 	MagX           int
 	MagY           int
+	IsEjected      bool
 }
 
 type GameEvent struct {
@@ -117,8 +118,8 @@ func CreateGame() *Game {
 	}
 
 	velocity := [2]float32{
-		float32(-2.5),
-		float32(-2.5),
+		float32(1.2),
+		float32(1.2),
 	}
 
 	firstBall := Ball{
@@ -205,6 +206,8 @@ listener:
 			registerPlayerMovement(game, event.Data.(RegisterPlayerMovementData))
 		case TERMINATE_GAME:
 			terminateGame(game)
+		case EJECT_PLAYER:
+			ejectPlayer(game, event.Data.(string))
 		}
 	}
 }
