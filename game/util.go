@@ -1,33 +1,26 @@
 package games
 
+func getPlayer(game *Game, side string) *Player {
+	switch side {
+	case "top":
+		return game.TopPlayer
+	case "bottom":
+		return game.BottomPlayer
+	case "left":
+		return game.LeftPlayer
+	default:
+		return game.RightPlayer
+	}
+}
+
 func playerIsActive(game *Game, side string) bool {
-	if side == "top" {
-		return game.TopPlayer != nil && game.TopPlayer.IsActive
-	}
-
-	if side == "bottom" {
-		return game.BottomPlayer != nil && game.BottomPlayer.IsActive
-	}
-
-	if side == "left" {
-		return game.LeftPlayer != nil && game.LeftPlayer.IsActive
-	}
-
-	return game.RightPlayer != nil && game.RightPlayer.IsActive
+	player := getPlayer(game, side)
+	return player != nil && player.IsActive
 }
 
 func maybeGetActivePlayer(game *Game, side string) *Player {
 	if playerIsActive(game, side) {
-		switch side {
-		case "top":
-			return game.TopPlayer
-		case "bottom":
-			return game.BottomPlayer
-		case "left":
-			return game.LeftPlayer
-		default:
-			return game.RightPlayer
-		}
+		return getPlayer(game, side)
 	}
 	return nil
 }

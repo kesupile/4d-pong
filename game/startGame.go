@@ -80,24 +80,12 @@ type FinalCollisionDetails struct {
 }
 
 func calculateFinalDetail(game *Game, ball *Ball, collisionTime CollisionDetail) FinalCollisionDetails {
-	var checkForPlayer bool
-	switch collisionTime.Side {
-	case "top":
-		checkForPlayer = game.TopPlayer != nil && game.TopPlayer.IsActive
-	case "bottom":
-		checkForPlayer = game.BottomPlayer != nil && game.BottomPlayer.IsActive
-	case "left":
-		checkForPlayer = game.LeftPlayer != nil && game.LeftPlayer.IsActive
-	case "right":
-		checkForPlayer = game.RightPlayer != nil && game.RightPlayer.IsActive
-	}
-
 	frameFraction := math.Min(1, collisionTime.FramesToCollision)
 
 	return FinalCollisionDetails{
 		Side:           collisionTime.Side,
 		FrameFraction:  frameFraction,
-		CheckForPlayer: checkForPlayer,
+		CheckForPlayer: playerIsActive(game, collisionTime.Side),
 	}
 }
 

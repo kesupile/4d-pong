@@ -1,18 +1,7 @@
 package games
 
-func cleanUpConnection(game *Game, position string) {
-	var player *Player
-	switch position {
-	case "top":
-		player = game.TopPlayer
-	case "bottom":
-		player = game.BottomPlayer
-	case "left":
-		player = game.LeftPlayer
-	case "right":
-		player = game.RightPlayer
-	}
-
+func cleanUpConnection(game *Game, side string) {
+	player := getPlayer(game, side)
 	player.IsActive = false
 	player.IsEjected = true
 	game.NPlayersConnected = game.NPlayersConnected - 1

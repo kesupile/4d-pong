@@ -58,20 +58,20 @@ func getGamePositions(game *Game) []byte {
 
 	positions[0] = byte(0)
 
-	if game.TopPlayer != nil && game.TopPlayer.IsActive {
+	if playerIsActive(game, "top") {
 		setPlayerPosition(game.TopPlayer, positions, 1)
 	}
 
-	if game.BottomPlayer != nil && game.BottomPlayer.IsActive {
+	if playerIsActive(game, "bottom") {
 		setPlayerPosition(game.BottomPlayer, positions, 7)
 	}
 
-	if game.LeftPlayer != nil && game.LeftPlayer.IsActive {
-		setPlayerPosition(game.TopPlayer, positions, 13)
+	if playerIsActive(game, "left") {
+		setPlayerPosition(game.LeftPlayer, positions, 13)
 	}
 
-	if game.RightPlayer != nil && game.RightPlayer.IsActive {
-		setPlayerPosition(game.TopPlayer, positions, 19)
+	if playerIsActive(game, "right") {
+		setPlayerPosition(game.RightPlayer, positions, 19)
 	}
 
 	updateBallPositions(game, positions)
