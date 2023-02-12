@@ -38,6 +38,7 @@ type Game struct {
 	NPlayersConnected   int
 	StatusUpdatesActive bool
 	IsActive            bool
+	StartTime           string
 	Width               int
 	Height              int
 	TopPlayer           *Player
@@ -51,7 +52,7 @@ type Game struct {
 }
 
 func (game *Game) IsAcceptingConnections() bool {
-	return game.NPlayersConnected < game.NPlayers
+	return game.StartTime == "" && game.NPlayersConnected < game.NPlayers
 }
 
 func (game *Game) FindPlayerToAssign() (*Player, error) {

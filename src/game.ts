@@ -380,14 +380,12 @@ const startNewConnection = () => {
 };
 
 window.addEventListener("DOMContentLoaded", () => {
-  console.log(`ID: ${dataChannelLabel}`);
-
   getGameStatus().then((res) => {
     if (res.acceptingConnections) {
       game.initialise(res);
       return startNewConnection();
     }
-    return console.error("Do something else here...");
+    return alert("Cannot connect to game");
   });
 
   window.addEventListener("resize", () => game.scale());

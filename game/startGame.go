@@ -213,6 +213,7 @@ func calculateGameStatus(game *Game, finalCollisionDetails []FinalCollisionDetai
 }
 
 func startGame(game *Game) {
+	game.StartTime = time.Now().Format("2006-01-02T15:04:05-0700")
 	game.IsActive = true
 
 	go calculateGameStatus(game, []FinalCollisionDetails{
