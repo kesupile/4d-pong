@@ -122,7 +122,7 @@ func HandleGameStatusGET(w http.ResponseWriter, req *http.Request) {
 	}
 
 	writeJsonResponse(w, Response{
-		Active:               game.Active,
+		Active:               game.IsActive,
 		AcceptingConnections: game.IsAcceptingConnections(),
 		Height:               game.Height,
 		Width:                game.Width,

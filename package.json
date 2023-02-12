@@ -1,0 +1,30 @@
+{
+  "name": "4d-pong",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "watch": "concurrently --raw \"yarn watch:ts\" \"yarn lint:tsc\"",
+    "watch:ts": "npx swc ./src -d ./public --watch",
+    "lint:tsc": "tsc --project ./tsconfig.json --noEmit --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kesupile/4d-pong.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/kesupile/4d-pong/issues"
+  },
+  "homepage": "https://github.com/kesupile/4d-pong#readme",
+  "devDependencies": {
+    "@swc/cli": "^0.1.61",
+    "@swc/core": "^1.3.32",
+    "concurrently": "^7.6.0"
+  },
+  "dependencies": {
+    "chokidar": "^3.5.3",
+    "typescript": "^4.9.5"
+  }
+}
