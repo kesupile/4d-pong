@@ -1,9 +1,74 @@
 <!DOCTYPE html>
 <html>
-    <head>
-    </head>
-    <body>
-        <button id="new-game-btn">New game</button>
-    </body>
-    <script src="./index.js" type="text/javascript"></script>
+  <head>
+    <style>
+      [aria-label="required"] {
+        color: red;
+        margin-left: 3px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <h1>4D Pong</h1>
+    <p>Complete the form below to create new game</p>
+    <p>
+      Once submitted, you will be redirected a different page and you can share
+      the URL with the participants. The game will start once all players have
+      entered.
+    </p>
+
+    <form action="">
+      <fieldset>
+        <legend>
+          Number of players<span aria-label="required" title="required">*</span>
+        </legend>
+        <div>
+          <label for="two">2</label>
+          <input
+            name="nPlayers"
+            type="radio"
+            id="two"
+            value="2"
+            required="true"
+          />
+        </div>
+        <div>
+          <label for="three">3</label>
+          <input
+            name="nPlayers"
+            type="radio"
+            id="three"
+            value="3"
+            required="true"
+          />
+        </div>
+        <div>
+          <label for="four">4</label>
+          <input
+            name="nPlayers"
+            type="radio"
+            id="four"
+            value="4"
+            required="true"
+          />
+        </div>
+      </fieldset>
+
+      <div>
+        <label for="creatorName"
+          >Name<span aria-label="required" title="required">*</span></label
+        >
+        <input
+          id="creatorName"
+          name="creatorName"
+          placeholder="Enter your player name"
+          required="true"
+        />
+      </div>
+
+      <button type="submit">Create Game</button>
+    </form>
+  </body>
+  <script src="./index.js" type="text/javascript"></script>
 </html>

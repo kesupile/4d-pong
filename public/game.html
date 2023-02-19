@@ -2,7 +2,8 @@
 <html>
   <head>
     <style>
-      html, body {
+      html,
+      body {
         padding: 0px;
         margin: 0px;
       }
@@ -29,9 +30,22 @@
         background-color: white;
         border-radius: 100%;
       }
+
+      #intro {
+        display: none;
+      }
+
+      #intro.visible {
+        display: block;
+      }
     </style>
   </head>
   <body>
+    <div id="intro" class="hidden">
+      <h1>4D Pong</h1>
+      <p>Enter your player name and press "Enter" to join the game.</p>
+      <input id="playerName" placeholder="playername" />
+    </div>
     <div id="game"></div>
     <script type="text/javascript" src="./game.js"></script>
   </body>

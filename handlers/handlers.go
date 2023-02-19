@@ -34,7 +34,12 @@ func writeJsonResponse(w http.ResponseWriter, value any) {
 	w.Write(response)
 }
 
-func startNewPeerConnection(sessionDescription string, gameId string, ready chan<- string) {
+type SessionStartReq struct {
+	SessionDescription string `json:"sessionDescription"`
+	PlayerName         string `json:"playerName"`
+}
+
+func startNewPeerConnection(sessionStartReq SessionStartReq, gameId string, ready chan<- string) {
 	config := webrtc.Configuration{
 		ICEServers: []webrtc.ICEServer{
 			{
@@ -48,7 +53,7 @@ func startNewPeerConnection(sessionDescription string, gameId string, ready chan
 		panic(err)
 	}
 
-	err = games.RegisterPeerConnection(gameId, peerConnection)
+	err = games.RegisterPeerConnection(gameId, peerConnection, sessionStartReq.PlayerName)
 
 	if err != nil {
 		if cErr := peerConnection.Close(); cErr != nil {
@@ -56,7 +61,7 @@ func startNewPeerConnection(sessionDescription string, gameId string, ready chan
 		}
 	}
 
-	sessionDescriptionBytes, sessionDecodingErr := base64.StdEncoding.DecodeString(sessionDescription)
+	sessionDescriptionBytes, sessionDecodingErr := base64.StdEncoding.DecodeString(sessionStartReq.SessionDescription)
 	if sessionDecodingErr != nil {
 		panic(sessionDecodingErr)
 	}
@@ -138,10 +143,6 @@ func HandleGameJoinPOST(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	type SessionStartReq struct {
-		SessionDescription string `json:"sessionDescription"`
-	}
-
 	var sessionData SessionStartReq
 	err := ReadIntoStruct(req.Body, &sessionData)
 
@@ -150,17 +151,27 @@ func HandleGameJoinPOST(w http.ResponseWriter, req *http.Request) {
 	}
 
 	ready := make(chan string)
-	go startNewPeerConnection(sessionData.SessionDescription, game.Id, ready)
+	go startNewPeerConnection(sessionData, game.Id, ready)
 
 	localDescription := <-ready
-	writeJsonResponse(w, SessionStartReq{localDescription})
+	type SessionStartResp struct {
+		SessionDescription string `json:"sessionDescription"`
+	}
+	writeJsonResponse(w, SessionStartResp{localDescription})
 
 	w.WriteHeader(http.StatusOK)
 
 }
 
 func HandleNewGamePOST(w http.ResponseWriter, req *http.Request) {
-	game := games.CreateGame()
+	var gameInfo games.NewGameInfo
+	err := ReadIntoStruct(req.Body, &gameInfo)
+
+	if err != nil {
+		panic(err)
+	}
+
+	game := games.CreateGame(gameInfo)
 
 	type NewGameResponse struct {
 		Id string `json:"gameId"`

@@ -6,6 +6,7 @@ import {
   KeyCodeByte,
   Position,
   ElementPosition,
+  OriginatorData,
 } from "./types";
 
 const KEYBOARD_SEND_INTERVAL = 35;
@@ -334,7 +335,7 @@ const handleMessage: RTCDataChannel["onmessage"] = (message) => {
   }
 };
 
-const startNewConnection = () => {
+const startNewConnection = (playerName: string) => {
   const pc = new RTCPeerConnection({
     iceServers: [
       {
@@ -360,7 +361,7 @@ const startNewConnection = () => {
 
       fetch(`${origin}/api/game/${gameId}/join`, {
         method: "POST",
-        body: JSON.stringify({ sessionDescription }),
+        body: JSON.stringify({ sessionDescription, playerName }),
         headers: {
           "Content-Type": "application/json",
         },
@@ -379,13 +380,52 @@ const startNewConnection = () => {
   dataChannel.onmessage = handleMessage;
 };
 
+const waitForPlayerDetails = () =>
+  new Promise<string>((resolve) => {
+    const introSection = document.getElementById("intro")!;
+    introSection.classList.add("visible");
+
+    const input = document.getElementById("playerName")!;
+    input.addEventListener("keydown", (e) => {
+      const value = (e.target as HTMLInputElement).value;
+      if (e.code !== "Enter" || !value) {
+        return;
+      }
+
+      introSection.classList.remove("visible");
+      resolve(value);
+    });
+  });
+
+const getGameData = () => {
+  let storageData: OriginatorData | null = null;
+  try {
+    storageData = JSON.parse(
+      sessionStorage.getItem("originator")!
+    ) as OriginatorData;
+  } catch (e) {}
+
+  sessionStorage.clear();
+  return storageData;
+};
+
+const getPlayerName = async () => {
+  const gameData = getGameData();
+  if (!gameData) {
+    return waitForPlayerDetails();
+  }
+  return gameData.creatorName;
+};
+
 window.addEventListener("DOMContentLoaded", () => {
-  getGameStatus().then((res) => {
-    if (res.acceptingConnections) {
-      game.initialise(res);
-      return startNewConnection();
+  getGameStatus().then(async (res) => {
+    if (!res.acceptingConnections) {
+      return alert("Cannot connect to game");
     }
-    return alert("Cannot connect to game");
+
+    const playerName = await getPlayerName();
+    game.initialise(res);
+    startNewConnection(playerName);
   });
 
   window.addEventListener("resize", () => game.scale());

@@ -16,6 +16,7 @@ type Ball struct {
 }
 
 type Player struct {
+	Name           string
 	PeerConnection *webrtc.PeerConnection
 	DataChannel    *webrtc.DataChannel
 	Position       string
@@ -37,6 +38,7 @@ type Game struct {
 	NPlayers            int
 	NPlayersConnected   int
 	StatusUpdatesActive bool
+	CreatorName         string
 	IsActive            bool
 	StartTime           string
 	Width               int
@@ -49,6 +51,11 @@ type Game struct {
 	StopStatusUpdates   chan bool
 	StopGame            chan bool
 	Balls               *[1]*Ball
+}
+
+type NewGameInfo struct {
+	NPlayers    int    `json:"nPlayers"`
+	CreatorName string `json:"creatorName"`
 }
 
 func (game *Game) IsAcceptingConnections() bool {
@@ -111,7 +118,7 @@ func (game *Game) FindPlayerToAssign() (*Player, error) {
 
 var gameStore = map[string]*Game{}
 
-func CreateGame() *Game {
+func CreateGame(info NewGameInfo) *Game {
 	var balls [1](*Ball)
 	centrePosition := [2]float32{
 		float32(GAME_WIDTH / 2),
@@ -137,7 +144,8 @@ func CreateGame() *Game {
 		IsActive:          false,
 		Width:             GAME_WIDTH,
 		Height:            GAME_HEIGHT,
-		NPlayers:          2,
+		NPlayers:          info.NPlayers,
+		CreatorName:       info.CreatorName,
 		NPlayersConnected: 0,
 		events:            make(chan GameEvent),
 		StopStatusUpdates: make(chan bool),
@@ -265,7 +273,7 @@ func attachPeerConnectionHandlers(game *Game, player *Player, peerConnection *we
 
 }
 
-func RegisterPeerConnection(gameId string, peerConnection *webrtc.PeerConnection) error {
+func RegisterPeerConnection(gameId string, peerConnection *webrtc.PeerConnection, playerName string) error {
 	game, ok := GetGame(gameId)
 	if !ok {
 		return errors.New("no such game")
@@ -278,6 +286,7 @@ func RegisterPeerConnection(gameId string, peerConnection *webrtc.PeerConnection
 	}
 
 	player.PeerConnection = peerConnection
+	player.Name = playerName
 	attachPeerConnectionHandlers(game, player, peerConnection)
 	return nil
 }

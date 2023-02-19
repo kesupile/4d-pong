@@ -1,3 +1,13 @@
+export interface GameData {
+  creatorName: string;
+  nPlayers: number;
+}
+
+export interface OriginatorData {
+  id: string;
+  creatorName: string;
+}
+
 export interface ElementPosition {
   x: number;
   y: number;
