@@ -139,8 +139,9 @@ const game: Game = {
     ball = document.createElement("div");
     ball.dataset.ballId = String(index);
     ball.classList.add("ball");
-    ball.style.width = `${radius}px`;
-    ball.style.height = `${radius}px`;
+    const diameter = radius * 2;
+    ball.style.width = `${diameter}px`;
+    ball.style.height = `${diameter}px`;
 
     this.getContainerElement().appendChild(ball);
 
@@ -260,14 +261,17 @@ interface DrawPlayerOptions extends GameElement {
   position: Position;
   isCurrent: number;
 }
-const drawPlayer = (options: DrawPlayerOptions) => {
-  const { position, isCurrent, x, y, height, width } = options;
-  const playerElement = game.getPlayerElement(position);
 
-  playerElement.style.left = `${x}px`;
-  playerElement.style.top = `${y}px`;
+const transformElement = (element: HTMLElement, { x, y }: ElementPosition) => {
+  element.style.transform = `translate(${x}px, ${y}px)`;
+};
+
+const drawPlayer = (options: DrawPlayerOptions) => {
+  const { position, isCurrent, height, width, ...xy } = options;
+  const playerElement = game.getPlayerElement(position);
   playerElement.style.width = `${width}px`;
   playerElement.style.height = `${height}px`;
+  transformElement(playerElement, xy);
 
   if (isCurrent) {
     currentPlayer.setPosition(position);
@@ -278,11 +282,8 @@ interface Ball extends ElementPosition {
   radius: number;
   index: number;
 }
-const drawBall = ({ x, y, radius, index }: Ball) => {
-  const ball = game.getBall(index, radius);
-  ball.style.left = `${x}px`;
-  ball.style.top = `${y}px`;
-};
+const drawBall = ({ radius, index, ...xy }: Ball) =>
+  transformElement(game.getBall(index, radius), xy);
 
 const playerChunkSize = 6;
 const playerPositions: Position[] = ["top", "bottom", "left", "right"];

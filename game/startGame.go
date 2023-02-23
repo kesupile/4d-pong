@@ -33,18 +33,28 @@ func calculateTimeToSideCollision(game *Game, ball *Ball, side string) float32 {
 	var speed float32
 	switch side {
 	case "top":
-		distance = ball.CentrePosition[1] - float32(PLAYER_HEIGHT)
+		distance = ball.CentrePosition[0] - ball.Radius
+		if playerIsActive(game, "top") {
+			distance -= float32(game.TopPlayer.MagY)
+		}
 		speed = float32(math.Abs(float64(ball.Velocity[1])))
 	case "bottom":
-		distance = float32(GAME_HEIGHT) - ball.CentrePosition[1] - float32(PLAYER_HEIGHT)
+		distance = float32(game.Height) - ball.CentrePosition[1] - ball.Radius
+		if playerIsActive(game, "bottom") {
+			distance -= float32(game.BottomPlayer.MagY)
+		}
 		speed = ball.Velocity[1]
 	case "left":
-		// TODO: consider left player
-		distance = ball.CentrePosition[0]
+		distance = ball.CentrePosition[0] - ball.Radius
+		if playerIsActive(game, "left") {
+			distance -= float32(game.LeftPlayer.MagX)
+		}
 		speed = float32(math.Abs(float64(ball.Velocity[0])))
 	case "right":
-		// TODO: consider right player
-		distance = float32(GAME_WIDTH) - ball.CentrePosition[0]
+		distance = float32(game.Width) - ball.CentrePosition[0] - ball.Radius
+		if playerIsActive(game, "right") {
+			distance -= float32(game.RightPlayer.MagX)
+		}
 		speed = ball.Velocity[0]
 	}
 

@@ -26,8 +26,8 @@ func makePositionsArray() []byte {
 
 func normaliseBallPosition(ball *Ball) (int, int, int) {
 	radius := int(ball.Radius)
-	x := int(ball.CentrePosition[0]) - radius/2
-	y := int(ball.CentrePosition[1]) - radius/2
+	x := int(ball.CentrePosition[0]) - radius
+	y := int(ball.CentrePosition[1]) - radius
 	return radius, x, y
 }
 

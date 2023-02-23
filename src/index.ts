@@ -24,8 +24,7 @@ const submitForm = (data: GameData) => {
 const buildJsonFormData = (form: HTMLFormElement) => {
   const data: Record<string, any> = {};
   for (const [key, value] of new FormData(form)) {
-    const numberVal = Number(value);
-    data[key] = Number.isNaN(numberVal) ? value : numberVal;
+    data[key] = key === "nPlayers" ? Number(value) : value;
   }
   return data as GameData;
 };

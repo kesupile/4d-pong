@@ -21,7 +21,6 @@ type Player struct {
 	DataChannel    *webrtc.DataChannel
 	Position       string
 	Coordinates    *[2]int
-	Dimensions     *[2]int
 	IsActive       bool
 	MagX           int
 	MagY           int
@@ -69,47 +68,55 @@ func (game *Game) FindPlayerToAssign() (*Player, error) {
 
 	player := &Player{}
 
-	// TODO: Left and right players
-	middleXPosition := (game.Width / 2) - PLAYER_WIDTH/2
+	topLeftXForTopAndBottomPlayers := (game.Width / 2) - PLAYER_WIDTH/2
+	topLeftYForLeftAndRightPlayers := (game.Height / 2) - PLAYER_WIDTH/2
 
 	var topLeftCoordinates [2]int
-	var dimensions [2]int
 
 	switch {
 	case game.TopPlayer == nil:
 		player.Position = "top"
 
-		topLeftCoordinates[0] = middleXPosition
-		topLeftCoordinates[1] = 0
-		player.Coordinates = &topLeftCoordinates
-
-		dimensions[0] = PLAYER_WIDTH
-		dimensions[1] = PLAYER_HEIGHT
-		player.Dimensions = &dimensions
-
 		player.MagX = PLAYER_WIDTH
 		player.MagY = PLAYER_HEIGHT
+
+		topLeftCoordinates[0] = topLeftXForTopAndBottomPlayers
+		topLeftCoordinates[1] = 0
+		player.Coordinates = &topLeftCoordinates
 
 		game.TopPlayer = player
 	case game.BottomPlayer == nil:
 		player.Position = "bottom"
-		topLeftCoordinates[0] = middleXPosition
-		topLeftCoordinates[1] = game.Height - PLAYER_HEIGHT
-		player.Coordinates = &topLeftCoordinates
-
-		dimensions[0] = PLAYER_WIDTH
-		dimensions[1] = PLAYER_HEIGHT
-		player.Dimensions = &dimensions
 
 		player.MagX = PLAYER_WIDTH
 		player.MagY = PLAYER_HEIGHT
 
+		topLeftCoordinates[0] = topLeftXForTopAndBottomPlayers
+		topLeftCoordinates[1] = game.Height - player.MagY
+		player.Coordinates = &topLeftCoordinates
+
 		game.BottomPlayer = player
 	case game.LeftPlayer == nil:
 		player.Position = "left"
+
+		player.MagX = PLAYER_HEIGHT
+		player.MagY = PLAYER_WIDTH
+
+		topLeftCoordinates[0] = 0
+		topLeftCoordinates[1] = topLeftYForLeftAndRightPlayers
+		player.Coordinates = &topLeftCoordinates
+
 		game.LeftPlayer = player
 	default:
 		player.Position = "right"
+
+		player.MagX = PLAYER_HEIGHT
+		player.MagY = PLAYER_WIDTH
+
+		topLeftCoordinates[0] = game.Width - player.MagX
+		topLeftCoordinates[1] = topLeftYForLeftAndRightPlayers
+		player.Coordinates = &topLeftCoordinates
+
 		game.RightPlayer = player
 	}
 
@@ -126,8 +133,8 @@ func CreateGame(info NewGameInfo) *Game {
 	}
 
 	velocity := [2]float32{
-		float32(1.2),
-		float32(1.2),
+		float32(1),
+		float32(0),
 	}
 
 	firstBall := Ball{
