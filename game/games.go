@@ -3,6 +3,7 @@ package games
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/pion/webrtc/v3"
@@ -25,6 +26,8 @@ type Player struct {
 	MagX           int
 	MagY           int
 	IsEjected      bool
+	Velocity       float32
+	ResetVelocity  func()
 }
 
 type GameEvent struct {
@@ -120,6 +123,10 @@ func (game *Game) FindPlayerToAssign() (*Player, error) {
 		game.RightPlayer = player
 	}
 
+	player.ResetVelocity = WithDebounce(time.Duration((time.Millisecond * 80)), func() {
+		game.events <- GameEvent{Type: RESET_PLAYER_VELOCITY, Data: player.Position}
+	})
+
 	return player, nil
 }
 
@@ -134,7 +141,7 @@ func CreateGame(info NewGameInfo) *Game {
 
 	velocity := [2]float32{
 		float32(1),
-		float32(0),
+		float32(1),
 	}
 
 	firstBall := Ball{
@@ -224,6 +231,9 @@ listener:
 			terminateGame(game)
 		case EJECT_PLAYER:
 			ejectPlayer(game, event.Data.(string))
+		case RESET_PLAYER_VELOCITY:
+			player := getPlayer(game, event.Data.(string))
+			player.Velocity = 0
 		}
 	}
 }

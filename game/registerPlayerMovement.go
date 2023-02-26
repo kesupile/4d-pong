@@ -1,22 +1,50 @@
 package games
 
+import "golang.org/x/exp/constraints"
+
 type RegisterPlayerMovementData struct {
 	Player  *Player
 	Message []byte
 }
 
-func max(a, b int) int {
+type Number interface {
+	constraints.Ordered
+}
+
+func max[T Number](a, b T) T {
 	if a > b {
 		return a
 	}
 	return b
 }
 
-func min(a, b int) int {
+func min[T Number](a, b T) T {
 	if a < b {
 		return a
 	}
 	return b
+}
+
+func resetPlayerVelocity(player *Player) {}
+
+var positive = "positive"
+var negative = "negative"
+
+func updatePlayerVelocity(player *Player, positiveOrNegative string) {
+	if positiveOrNegative == positive {
+		if player.Velocity < 0 {
+			player.Velocity = float32(PLAYER_VELOCITY_INCREMENT)
+		} else {
+			player.Velocity = min(player.Velocity+float32(PLAYER_VELOCITY_INCREMENT), float32(MAX_PLAYER_VELOCITY))
+		}
+	} else {
+		if player.Velocity > 0 {
+			player.Velocity = -float32(PLAYER_VELOCITY_INCREMENT)
+		} else {
+			player.Velocity = min(player.Velocity-float32(PLAYER_VELOCITY_INCREMENT), float32(-MAX_PLAYER_VELOCITY))
+		}
+	}
+	resetPlayerVelocity(player)
 }
 
 func updateHorizontalPlayerPosition(game *Game, player *Player, message []byte) {
@@ -29,10 +57,12 @@ func updateHorizontalPlayerPosition(game *Game, player *Player, message []byte) 
 
 	if movement == 0 {
 		// Left
-		nextXPosition = max(minPlayerPosition, currentX-MOVEMENT_SCALE_FACTOR)
+		nextXPosition = max(minPlayerPosition, currentX-PLAYER_MOVEMENT_SCALE_FACTOR)
+		updatePlayerVelocity(player, negative)
 	} else {
 		// Right
-		nextXPosition = min(maxPlayerPosition, currentX+MOVEMENT_SCALE_FACTOR)
+		nextXPosition = min(maxPlayerPosition, currentX+PLAYER_MOVEMENT_SCALE_FACTOR)
+		updatePlayerVelocity(player, positive)
 	}
 
 	player.Coordinates[0] = nextXPosition
@@ -48,10 +78,12 @@ func updateVerticalPlayerPosition(game *Game, player *Player, message []byte) {
 
 	if movement == 0 {
 		// Up
-		nextYPosition = max(minPlayerPosition, currentY-MOVEMENT_SCALE_FACTOR)
+		nextYPosition = max(minPlayerPosition, currentY-PLAYER_MOVEMENT_SCALE_FACTOR)
+		updatePlayerVelocity(player, negative)
 	} else {
-		// Right
-		nextYPosition = min(maxPlayerPosition, currentY+MOVEMENT_SCALE_FACTOR)
+		// Down
+		nextYPosition = min(maxPlayerPosition, currentY+PLAYER_MOVEMENT_SCALE_FACTOR)
+		updatePlayerVelocity(player, positive)
 	}
 
 	player.Coordinates[1] = nextYPosition
@@ -66,4 +98,5 @@ func registerPlayerMovement(game *Game, data RegisterPlayerMovementData) {
 		updateVerticalPlayerPosition(game, player, data.Message)
 	}
 
+	player.ResetVelocity()
 }

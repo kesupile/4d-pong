@@ -1,5 +1,10 @@
 package games
 
+import (
+	"sync"
+	"time"
+)
+
 func getPlayer(game *Game, side string) *Player {
 	switch side {
 	case "top":
@@ -52,5 +57,29 @@ func tiggerTerminationIfRequired(game *Game) {
 
 	if ejectedCount >= game.NPlayers-1 {
 		go startTermination(game)
+	}
+}
+
+type Debounce struct {
+	mu       sync.Mutex
+	Duration time.Duration
+	FnTimer  *time.Timer
+}
+
+func (debounce *Debounce) Reset(fn func()) {
+	debounce.mu.Lock()
+	defer debounce.mu.Unlock()
+
+	if debounce.FnTimer != nil {
+		debounce.FnTimer.Stop()
+	}
+
+	debounce.FnTimer = time.AfterFunc(debounce.Duration, fn)
+}
+
+func WithDebounce(duration time.Duration, timefn func()) func() {
+	debounce := Debounce{Duration: duration}
+	return func() {
+		debounce.Reset(timefn)
 	}
 }

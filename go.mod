@@ -1,6 +1,6 @@
 module server
 
-go 1.19
+go 1.20
 
 require (
 	github.com/go-chi/chi/v5 v5.0.8 // indirect
@@ -23,6 +23,7 @@ require (
 	github.com/pion/udp v0.1.1 // indirect
 	github.com/pion/webrtc/v3 v3.1.49 // indirect
 	golang.org/x/crypto v0.0.0-20221010152910-d6f0a8c073c2 // indirect
+	golang.org/x/exp v0.0.0-20230224173230-c95f2b4c22f2 // indirect
 	golang.org/x/net v0.1.0 // indirect
 	golang.org/x/sys v0.1.0 // indirect
 )

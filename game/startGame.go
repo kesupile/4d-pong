@@ -33,7 +33,7 @@ func calculateTimeToSideCollision(game *Game, ball *Ball, side string) float32 {
 	var speed float32
 	switch side {
 	case "top":
-		distance = ball.CentrePosition[0] - ball.Radius
+		distance = ball.CentrePosition[1] - ball.Radius
 		if playerIsActive(game, "top") {
 			distance -= float32(game.TopPlayer.MagY)
 		}
@@ -139,11 +139,19 @@ func getNextCollisionDetails(game *Game, ball *Ball) []FinalCollisionDetails {
 	return finalCollisionDetails
 }
 
-func updateBallVelocity(ball *Ball, side string) {
+func updateBallVelocity(ball *Ball, side string, shouldConsiderPlayer bool, player *Player) {
 	if side == "top" || side == "bottom" {
 		ball.Velocity[1] = -1 * ball.Velocity[1]
 	} else {
 		ball.Velocity[0] = -1 * ball.Velocity[0]
+	}
+
+	if shouldConsiderPlayer {
+		if side == "top" || side == "bottom" {
+			ball.Velocity[0] += player.Velocity
+		} else {
+			ball.Velocity[1] += player.Velocity
+		}
 	}
 }
 
@@ -197,15 +205,17 @@ func calculateGameStatus(game *Game, finalCollisionDetails []FinalCollisionDetai
 
 		ballCheckBlock:
 			for _, ball := range game.Balls {
+				shouldConsiderPlayer := false
 				if player != nil {
 					playerIsInPosition := isPlayerInPosition(game, player, ball)
 					if !playerIsInPosition {
 						go startPlayerEjection(game, side)
 						continue ballCheckBlock
 					}
+					shouldConsiderPlayer = true
 				}
 
-				updateBallVelocity(ball, collisionDetails.Side)
+				updateBallVelocity(ball, collisionDetails.Side, shouldConsiderPlayer, player)
 			}
 		} else {
 			for _, ball := range game.Balls {
