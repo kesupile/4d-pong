@@ -119,11 +119,27 @@ func getGameFromRequest(req *http.Request) *games.Game {
 func HandleGameStatusGET(w http.ResponseWriter, req *http.Request) {
 	game := getGameFromRequest(req)
 
+	type PlayerStatus struct {
+		Position string `json:"position"`
+		Name     string `json:"name"`
+		IsActive bool   `json:"isActive"`
+	}
+
 	type Response struct {
-		Active               bool `json:"active"`
-		AcceptingConnections bool `json:"acceptingConnections"`
-		Height               int  `json:"height"`
-		Width                int  `json:"width"`
+		Active               bool           `json:"active"`
+		AcceptingConnections bool           `json:"acceptingConnections"`
+		Height               int            `json:"height"`
+		Width                int            `json:"width"`
+		PlayerStatuses       []PlayerStatus `json:"playerStatuses"`
+	}
+
+	var playerStatuses = []PlayerStatus{}
+	for _, player := range games.GetAllActivePlayers(game) {
+		playerStatuses = append(playerStatuses, PlayerStatus{
+			Position: player.Position,
+			Name:     player.Name,
+			IsActive: player.IsActive,
+		})
 	}
 
 	writeJsonResponse(w, Response{
@@ -131,6 +147,7 @@ func HandleGameStatusGET(w http.ResponseWriter, req *http.Request) {
 		AcceptingConnections: game.IsAcceptingConnections(),
 		Height:               game.Height,
 		Width:                game.Width,
+		PlayerStatuses:       playerStatuses,
 	})
 	w.WriteHeader(http.StatusOK)
 }

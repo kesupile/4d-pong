@@ -83,3 +83,17 @@ func WithDebounce(duration time.Duration, timefn func()) func() {
 		debounce.Reset(timefn)
 	}
 }
+
+func GetAllActivePlayers(game *Game) []*Player {
+	var players []*Player
+	playerSides := []string{"top", "bottom", "left", "right"}
+
+	for _, side := range playerSides {
+		maybePlayer := maybeGetActivePlayer(game, side)
+		if maybePlayer != nil {
+			players = append(players, maybePlayer)
+		}
+	}
+
+	return players
+}

@@ -18,9 +18,24 @@ export interface GameElement extends ElementPosition {
   height: number;
 }
 
-export type GameDetails = Pick<GameElement, "height" | "width">;
-
 export type Position = "top" | "bottom" | "left" | "right";
+
+export interface PlayerStatus {
+  position: Position;
+  name: string;
+  isActive: boolean;
+}
+
+export interface GameDetails extends Pick<GameElement, "height" | "width"> {
+  active: boolean;
+  currentPlayerName: string;
+  playerStatuses: Record<string, PlayerStatus>;
+}
+
+export interface APIGameDetails
+  extends Omit<GameDetails, "currentPlayerName" | "playerStatuses"> {
+  playerStatuses: PlayerStatus[];
+}
 
 type PlayerPositionKey = `${Position}Player`;
 
@@ -37,9 +52,10 @@ export interface Game extends PlayerElementMap {
   getContainerElement: () => HTMLElement;
   getPlayerKey: (position: Position) => PlayerPositionKey;
   getPlayerElement: (position: Position) => HTMLElement;
-  initialise: (details: GameDetails) => void;
+  initialise: (details: APIGameDetails, playerName: string) => void;
   removePlayerElement: (position: Position) => void;
   scale: () => void;
+  update: (details: APIGameDetails) => void;
 }
 
 export type Controls = "ArrowLeft" | "ArrowRight" | "ArrowUp" | "ArrowDown";

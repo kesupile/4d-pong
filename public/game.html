@@ -42,6 +42,37 @@
       #intro.visible {
         display: block;
       }
+
+      #notificationContainer {
+        position: absolute;
+        z-index: 10;
+        left: 10px;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .notification {
+        background-color: white;
+        padding: 5px;
+        border-radius: 5px;
+        margin-top: 5px;
+        font-size: small;
+        width: fit-content;
+        font-weight: bold;
+      }
+
+      .notification.fadeOut {
+        opacity: 0;
+        transition: opacity 1s ease-out;
+      }
+
+      .notification.negative {
+        color: red;
+      }
+
+      .notification.positive {
+        color: green;
+      }
     </style>
   </head>
   <body>
@@ -50,6 +81,7 @@
       <p>Enter your player name and press "Enter" to join the game.</p>
       <input id="playerName" placeholder="playername" />
     </div>
+    <div id="notificationContainer"></div>
     <div id="game"></div>
     <script type="text/javascript" src="./game.js"></script>
   </body>

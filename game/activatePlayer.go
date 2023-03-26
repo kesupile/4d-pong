@@ -16,4 +16,6 @@ func activatePlayer(game *Game, position string) {
 	}
 
 	player.IsActive = true
+
+	SendPlayerStatusNotification(game)
 }

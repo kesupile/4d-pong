@@ -9,5 +9,7 @@ func ejectPlayer(game *Game, side string) {
 	player.IsActive = false
 	player.IsEjected = true
 
+	SendPlayerStatusNotification(game)
+
 	tiggerTerminationIfRequired(game)
 }

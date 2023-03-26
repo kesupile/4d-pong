@@ -232,9 +232,15 @@ func calculateGameStatus(game *Game, finalCollisionDetails []FinalCollisionDetai
 	go calculateGameStatus(game, nextFinalCollisionDetails)
 }
 
-func startGame(game *Game) {
+func startTheGame(game *Game) {
 	game.StartTime = time.Now().Format("2006-01-02T15:04:05-0700")
 	game.IsActive = true
+
+	for _, player := range GetAllActivePlayers(game) {
+		player.DataChannel.Send(
+			[]byte{byte(3)},
+		)
+	}
 
 	go calculateGameStatus(game, []FinalCollisionDetails{
 		{FrameFraction: 1},
@@ -242,4 +248,23 @@ func startGame(game *Game) {
 
 	<-game.StopGame
 	game.IsActive = false
+}
+
+func startCountdownThenGame(game *Game) {
+	timeLeft := 5
+	for timeLeft >= 0 {
+		for _, player := range GetAllActivePlayers(game) {
+			data := []byte{byte(2), byte(timeLeft)}
+			player.DataChannel.Send(data)
+		}
+		time.Sleep(time.Second * 1)
+		timeLeft--
+	}
+
+	startTheGame(game)
+}
+
+func startGame(game *Game) {
+	time.Sleep(time.Second * 3)
+	startCountdownThenGame(game)
 }

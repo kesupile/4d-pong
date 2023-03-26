@@ -7,6 +7,7 @@ import {
   Position,
   ElementPosition,
   OriginatorData,
+  PlayerStatus,
 } from "./types";
 
 const KEYBOARD_SEND_INTERVAL = 35;
@@ -33,6 +34,48 @@ const getUrlInfo = (() => {
   };
 })();
 
+interface NotifyUserOptions {
+  persist?: boolean;
+  sentiment?: "neutral" | "negative" | "positive";
+  startFadeTimeout?: number;
+  removeTimeout?: number;
+}
+const notifyUser = (text: string, options?: NotifyUserOptions) => {
+  const {
+    persist = false,
+    sentiment = "neutral",
+    startFadeTimeout = 1_000,
+    removeTimeout = 2_100,
+  } = options ?? {};
+  const notificationContainer = document.querySelector(
+    "#notificationContainer"
+  )!;
+  const notification = document.createElement("div");
+  notification.classList.add("notification");
+  if (sentiment !== "neutral") {
+    notification.classList.add(sentiment);
+  }
+
+  notification.textContent = text;
+  notificationContainer.appendChild(notification);
+
+  if (persist) {
+    return;
+  }
+
+  if (startFadeTimeout) {
+    setTimeout(() => {
+      notification.classList.add("fadeOut");
+    }, startFadeTimeout);
+  }
+
+  if (removeTimeout) {
+    setTimeout(() => {
+      notificationContainer.removeChild(notification);
+    }, removeTimeout);
+  }
+};
+
 const getGameStatus = () => {
   const { origin, gameId } = getUrlInfo();
   return fetch(`${origin}/api/game/${gameId}/status`).then((r) => r.json());
@@ -40,18 +83,72 @@ const getGameStatus = () => {
 
 const game: Game = {
   balls: [],
-  details: { width: 0, height: 0 },
+  details: {
+    currentPlayerName: "",
+    active: false,
+    width: 0,
+    height: 0,
+    playerStatuses: {},
+  },
 
-  initialise(details) {
+  initialise({ playerStatuses, ...details }, currentPlayerName) {
     const gameContainer = document.getElementById("game")!;
     gameContainer.style.width = `${details.width}px`;
     gameContainer.style.height = `${details.height}px`;
     gameContainer.style.backgroundColor = "black";
 
     this.containerElement = gameContainer;
-    this.details = details;
+    this.details = { ...details, playerStatuses: {}, currentPlayerName };
 
     this.scale();
+  },
+
+  update({ playerStatuses, ...newDetails }) {
+    const oldDetails = this.details;
+
+    let playerStatusLookup: Record<string, PlayerStatus> =
+      oldDetails.playerStatuses;
+
+    const oldPlayerStatusCount = Object.keys(oldDetails.playerStatuses).length;
+    if (playerStatuses.length > oldPlayerStatusCount) {
+      playerStatuses.forEach((playerStatus) => {
+        const name = playerStatus.name;
+        if (
+          !oldDetails.playerStatuses[name] &&
+          name !== oldDetails.currentPlayerName
+        ) {
+          notifyUser(`${name} joined the game`);
+        }
+        playerStatusLookup[name] = playerStatus;
+      });
+    }
+
+    if (this.details.active) {
+      const playersLeft: string[] = [];
+      let playersEjected = Object.keys(oldDetails.currentPlayerName);
+
+      playerStatuses.forEach((playerStatus) => {
+        const name = playerStatus.name;
+        playersEjected = playersEjected.filter((player) => player !== name);
+        playersLeft.push(name);
+        playerStatusLookup[name] = playerStatus;
+      });
+
+      console.log({ playersEjected, playersLeft });
+      playersEjected.forEach((player) => {
+        notifyUser(`${player} left the game`, { sentiment: "negative" });
+      });
+
+      if (playersLeft.length === 1) {
+        notifyUser("You win", { sentiment: "positive", persist: true });
+      }
+    }
+
+    this.details = {
+      ...oldDetails,
+      ...newDetails,
+      playerStatuses: playerStatusLookup,
+    };
   },
 
   scale() {
@@ -326,11 +423,38 @@ const handleGeneralUpdateMessage = (data: Uint8Array) => {
   }
 };
 
+const startGameCountdown = ([, timeLeft]: Uint8Array) => {
+  notifyUser(`${timeLeft}`, {
+    sentiment: "positive",
+    removeTimeout: 800,
+  });
+};
+
+const debounce = (fn: (...data: any[]) => any, timeout: number) => {
+  let timer: NodeJS.Timeout;
+  return (...data: Parameters<typeof fn>) => {
+    clearTimeout(timer);
+    timer = setTimeout(fn, timeout, ...data);
+  };
+};
+
+const fetchAndUpdateGameStatus = debounce(
+  () => getGameStatus().then((details) => game.update(details)),
+  300
+);
+
 const handleMessage: RTCDataChannel["onmessage"] = (message) => {
   const data = new Uint8Array(message.data);
+
   switch (data[0]) {
     case 0:
       return handleGeneralUpdateMessage(data);
+    case 1:
+      return fetchAndUpdateGameStatus();
+    case 2:
+      return startGameCountdown(data);
+    case 3:
+      return fetchAndUpdateGameStatus();
     default:
       return;
   }
@@ -425,7 +549,7 @@ window.addEventListener("DOMContentLoaded", () => {
     }
 
     const playerName = await getPlayerName();
-    game.initialise(res);
+    game.initialise(res, playerName);
     startNewConnection(playerName);
   });
 
